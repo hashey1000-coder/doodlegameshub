@@ -744,14 +744,6 @@ export default function Home() {
                               </span>
                             )}
                           </div>
-                          {/* Rating + play count row */}
-                          <div className="flex items-center justify-between mt-auto">
-                            <div className="flex items-center gap-0.5">
-                              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                              <span className="text-[11px] font-bold text-amber-600 dark:text-amber-500">{game.rating.toFixed(1)}</span>
-                            </div>
-                            <span className="text-[10px] text-slate-500 dark:text-slate-400">{formatPlayCount(game.playCount)} {t('common.plays')}</span>
-                          </div>
                           {/* Show active tags on card */}
                           {activeTags.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-1.5">
@@ -765,6 +757,14 @@ export default function Home() {
                               })}
                             </div>
                           )}
+                          {/* Rating + play count row */}
+                          <div className="flex items-center justify-between mt-auto">
+                            <div className="flex items-center gap-0.5">
+                              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                              <span className="text-[11px] font-bold text-amber-600 dark:text-amber-500">{game.rating.toFixed(1)}</span>
+                            </div>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400">{formatPlayCount(game.playCount)} {t('common.plays')}</span>
+                          </div>
                         </div>
                       </div>
                     </div>

@@ -209,11 +209,11 @@ export default function TopRated() {
 
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
           {/* Table header */}
-          <div className="grid grid-cols-[28px_1fr_56px_52px] sm:grid-cols-[40px_1fr_100px_80px_90px] md:grid-cols-[40px_1fr_100px_80px_80px_90px] gap-1.5 sm:gap-4 px-3 sm:px-4 py-3 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+          <div className="grid grid-cols-[32px_1fr_64px] sm:grid-cols-[40px_1fr_80px_90px] md:grid-cols-[40px_1fr_100px_80px_80px_90px] gap-2 sm:gap-4 px-3 sm:px-4 py-3 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
             <div className="text-center">#</div>
             <div>{t('topRated.game')}</div>
             <div className="text-center hidden sm:block">{t('topRated.category')}</div>
-            <div className="text-center">
+            <div className="text-center hidden sm:block">
               <ThumbsUp className="w-3.5 h-3.5 inline" /> {t('topRated.likes')}
             </div>
             <div className="text-center hidden md:block">
@@ -231,7 +231,7 @@ export default function TopRated() {
               <Link href={`/play/${game.slug}/`}>
                 <div
                   onMouseEnter={() => prefetchGameUrl(game.iframeUrl)}
-                  className={`grid grid-cols-[28px_1fr_56px_52px] sm:grid-cols-[40px_1fr_100px_80px_90px] md:grid-cols-[40px_1fr_100px_80px_80px_90px] gap-1.5 sm:gap-4 px-3 sm:px-4 py-3 items-center border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-violet-50/50 dark:hover:bg-violet-950/30 transition-colors cursor-pointer group ${
+                  className={`grid grid-cols-[32px_1fr_64px] sm:grid-cols-[40px_1fr_80px_90px] md:grid-cols-[40px_1fr_100px_80px_80px_90px] gap-2 sm:gap-4 px-3 sm:px-4 py-3 items-center border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-violet-50/50 dark:hover:bg-violet-950/30 transition-colors cursor-pointer group ${
                     index < 3 ? "bg-amber-50/30 dark:bg-amber-950/20" : ""
                   }`}
                 >
@@ -283,7 +283,7 @@ export default function TopRated() {
                   <div className="hidden sm:block" />
 
                   {/* Likes */}
-                  <div className="text-center">
+                  <div className="text-center hidden sm:block">
                     <span className={`text-xs sm:text-sm font-bold ${game.likes > 0 ? "text-green-600" : "text-slate-300"}`}>
                       {game.likes > 0 ? (game.likes >= 1_000 ? `${(game.likes / 1_000).toFixed(0)}K` : game.likes) : "—"}
                     </span>

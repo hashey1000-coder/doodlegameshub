@@ -1,3 +1,46 @@
+/* --- Fullscreen fallback styles for PlayGame --- */
+
+/* Container base: used only for aspect-ratio in normal mode */
+.game-iframe-container {
+  position: relative;
+}
+
+/*
+ * CSS fullscreen mode.
+ * Uses inset:0 instead of width:100vw/height:100vh because on iOS Safari,
+ * 100vh includes the browser chrome (address bar), so inset:0 sticks to
+ * the actual visible edges and avoids the iOS viewport height bug.
+ */
+.fullscreen-container {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 9999 !important;
+  background: #000 !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+}
+
+/*
+ * When .fullscreen-container and .game-iframe-container are on the SAME element
+ * (our DOM structure), the child selector won't work — use compound selector.
+ */
+.fullscreen-container.game-iframe-container {
+  aspect-ratio: unset !important;
+}
+
+/* Iframe fills the fullscreen container */
+.fullscreen-container iframe {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  aspect-ratio: unset !important;
+  border: none !important;
+}
 @import "tailwindcss";
 @import "tw-animate-css";
 

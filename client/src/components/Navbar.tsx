@@ -208,7 +208,7 @@ export default function Navbar() {
 
             {/* Desktop nav links */}
             <Link href="/" onClick={markAllSeen}>
-              <span className={`relative text-sm font-medium transition-colors px-3 py-1.5 rounded-full hidden sm:inline-flex items-center gap-1 ${isActive('/') ? 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/50' : 'text-slate-600 dark:text-slate-300 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/50'}`}>
+              <span className={`relative text-sm font-medium transition-colors px-3 py-1.5 rounded-full hidden md:inline-flex items-center gap-1 ${isActive('/') ? 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/50' : 'text-slate-600 dark:text-slate-300 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/50'}`}>
                 {t('nav.allGames')}
                 {unseenCount > 0 && (
                   <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none animate-pulse">
@@ -219,7 +219,7 @@ export default function Navbar() {
             </Link>
 
             <Link href="/games/">
-              <span className={`flex items-center gap-1.5 text-sm font-medium transition-colors px-3 py-1.5 rounded-full hidden sm:inline-flex ${isActive('/games/') ? 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/50' : 'text-slate-600 dark:text-slate-300 hover:text-violet-600 hover:bg-violet-50'}`}>
+              <span className={`flex items-center gap-1.5 text-sm font-medium transition-colors px-3 py-1.5 rounded-full hidden md:inline-flex ${isActive('/games/') ? 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/50' : 'text-slate-600 dark:text-slate-300 hover:text-violet-600 hover:bg-violet-50'}`}>
                 <LayoutList className="w-3.5 h-3.5" />
                 {t('nav.aToZ')}
               </span>
@@ -244,7 +244,7 @@ export default function Navbar() {
               <Link href="/top-rated/">
                 <span
                   title={`${streak} ${t('nav.streakTooltip' as any)}`}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-orange-600 text-sm font-bold hover:bg-orange-100 transition-colors cursor-pointer hidden sm:flex"
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-orange-600 text-sm font-bold hover:bg-orange-100 transition-colors cursor-pointer hidden md:flex"
                 >
                   <span className="text-base leading-none">🔥</span>
                   <span>{streak}</span>
@@ -253,7 +253,7 @@ export default function Navbar() {
             )}
 
             {/* Language selector (desktop) */}
-            <div className="hidden sm:block">
+            <div className="hidden md:block">
               <LanguageSelector />
             </div>
 
@@ -272,7 +272,7 @@ export default function Navbar() {
               onClick={toggleKidsMode}
               title={kidsMode ? t('nav.kidsModeTooltipOn' as any) : t('nav.kidsModeTooltipOff' as any)}
               aria-label={kidsMode ? t('nav.kidsModeTooltipOn' as any) : t('nav.kidsModeTooltipOff' as any)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 hidden sm:flex ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 hidden md:flex ${
                 kidsMode
                   ? "bg-green-100 text-green-700 border border-green-200 hover:bg-green-200"
                   : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent"
@@ -285,7 +285,7 @@ export default function Navbar() {
             {/* Random button (desktop) */}
             <button
               onClick={handleRandomGame}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-violet-500 to-violet-600 text-white text-sm font-medium hover:from-violet-600 hover:to-violet-700 transition-all shadow-sm hover:shadow-md hover:shadow-violet-200/50 active:scale-95"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-violet-500 to-violet-600 text-white text-sm font-medium hover:from-violet-600 hover:to-violet-700 transition-all shadow-sm hover:shadow-md hover:shadow-violet-200/50 active:scale-95"
               title={t('nav.randomTooltip' as any)}
               aria-label={t('nav.randomTooltip' as any)}
             >
@@ -297,7 +297,7 @@ export default function Navbar() {
             <button
               onClick={() => setMobileMenuOpen(true)}
               aria-label={t('nav.openMenu' as any)}
-              className="sm:hidden w-9 h-9 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="md:hidden w-9 h-9 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -317,7 +317,7 @@ export default function Navbar() {
           style={{ background: "rgba(0,0,0,0.45)" }}
         >
           {/* Drawer panel */}
-          <div className="ml-auto w-72 h-full bg-white dark:bg-slate-900 shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+          <div className="ml-auto w-72 h-full bg-white dark:bg-slate-900 shadow-2xl flex flex-col min-h-0 overflow-y-auto animate-in slide-in-from-right duration-300">
             {/* Drawer header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">

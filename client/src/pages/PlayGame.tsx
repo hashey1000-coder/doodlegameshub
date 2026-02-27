@@ -5,7 +5,7 @@ import { SessionHistory } from "@/components/SessionHistory";
 const lazyConfetti = () => import("canvas-confetti").then(m => m.default);
 import { toast } from "sonner";
 import { Link, useParams, useLocation, useSearch } from "wouter";
-import { Maximize2, Minimize2, ChevronLeft, Play, ThumbsUp, ThumbsDown, Gamepad2, X, Share2, Check, ArrowRight, Shuffle, SkipForward, Star, Trophy } from "lucide-react";
+import { Maximize2, Minimize2, ChevronLeft, Play, ThumbsUp, ThumbsDown, Gamepad2, X, Share2, Check, ArrowRight, Shuffle, SkipForward, Trophy } from "lucide-react";
 import { GAMES, type Game } from "@/data/games";
 import { useGameTranslate, getGameT } from '@/data/gameTranslations';
 import { GAME_TRIVIA } from "@/data/trivia";
@@ -113,6 +113,56 @@ function getOrigin(url: string): string | null {
 }
 
 export default function PlayGame() {
+  // --- Fullscreen helpers ---
+
+  // CSS-based fullscreen: React controls the class via isFakeFullscreen state.
+  // We must NOT mutate classList directly — React re-render will overwrite it.
+  function enterCSSFullscreen() {
+    document.body.style.overflow = "hidden";
+    // Setting state triggers re-render which adds 'fullscreen-container' class via JSX
+    setIsFakeFullscreen(true);
+  }
+
+  function exitCSSFullscreen() {
+    document.body.style.overflow = "";
+    // Setting state triggers re-render which removes 'fullscreen-container' class via JSX
+    setIsFakeFullscreen(false);
+  }
+
+  async function enterFullscreen() {
+    const container = document.getElementById("game-player-container");
+    if (!container) { enterCSSFullscreen(); return; }
+    try {
+      // requestFullscreen rejects on iOS for iframe-containing divs — catch it
+      if (container.requestFullscreen) {
+        await container.requestFullscreen();
+      } else if ((container as any).webkitRequestFullscreen) {
+        await (container as any).webkitRequestFullscreen();
+      } else {
+        enterCSSFullscreen();
+      }
+    } catch {
+      // Native fullscreen denied or not supported (common on iOS) — use CSS fallback
+      enterCSSFullscreen();
+    }
+  }
+
+  function exitFullscreen() {
+    const isNativeFS = !!(
+      document.fullscreenElement ||
+      (document as any).webkitFullscreenElement ||
+      (document as any).mozFullScreenElement ||
+      (document as any).msFullscreenElement
+    );
+    if (isNativeFS) {
+      if (document.exitFullscreen) document.exitFullscreen();
+      else if ((document as any).webkitExitFullscreen) (document as any).webkitExitFullscreen();
+      else if ((document as any).mozCancelFullScreen) (document as any).mozCancelFullScreen();
+      else if ((document as any).msExitFullscreen) (document as any).msExitFullscreen();
+    } else {
+      exitCSSFullscreen();
+    }
+  }
   const t = useT();
   const gt = useGameTranslate();
   const { locale } = useLanguage();
@@ -353,33 +403,14 @@ export default function PlayGame() {
     setIsLoading(false);
   }, [routeSlug]);
 
-  const handleFullscreen = () => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-    // Try native Fullscreen API first (works on desktop & Android)
-    if (iframe.requestFullscreen) {
-      iframe.requestFullscreen();
-    } else if ((iframe as any).webkitRequestFullscreen) {
-      (iframe as any).webkitRequestFullscreen();
-    } else {
-      // iOS Safari doesn't support iframe fullscreen — use CSS-based fallback
-      setIsFakeFullscreen(true);
-    }
-  };
-
-  // Lock body scroll and listen for Escape when in fake fullscreen
+  // Escape key exits CSS fullscreen
   useEffect(() => {
-    if (isFakeFullscreen) {
-      document.body.style.overflow = 'hidden';
-      const handleKey = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') setIsFakeFullscreen(false);
-      };
-      window.addEventListener('keydown', handleKey);
-      return () => {
-        document.body.style.overflow = '';
-        window.removeEventListener('keydown', handleKey);
-      };
-    }
+    if (!isFakeFullscreen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') exitCSSFullscreen();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
   }, [isFakeFullscreen]);
 
   const gameSlug = routeSlug ?? game?.slug ?? "";
@@ -573,18 +604,17 @@ export default function PlayGame() {
         <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2 tracking-tight">
           {gt(game).title}
         </h1>
-        {/* Rating + play count */}
+        {/* Difficulty badge + play count — no fake star ratings */}
         <div className="flex items-center gap-3 mb-5">
-          <div className="flex items-center gap-1">
-            {[1,2,3,4,5].map((s) => (
-              <Star key={s} className={`w-4 h-4 ${
-                s <= Math.round(game.rating)
-                  ? 'fill-amber-400 text-amber-400'
-                  : 'fill-slate-200 text-slate-200 dark:fill-slate-700 dark:text-slate-700'
-              }`} />
-            ))}
-            <span className="text-sm font-bold text-amber-600 ml-1">{game.rating.toFixed(1)}</span>
-          </div>
+          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+            game.difficulty === 'easy'
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800'
+              : game.difficulty === 'hard'
+              ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800'
+              : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800'
+          }`}>
+            {game.difficulty === 'easy' ? '😊' : game.difficulty === 'hard' ? '🔥' : '⚡'} {game.difficulty.charAt(0).toUpperCase() + game.difficulty.slice(1)}
+          </span>
           <span className="text-slate-300 dark:text-slate-400">·</span>
           <span className="text-sm text-slate-500 dark:text-slate-300">
             {game.playCount >= 1_000_000
@@ -601,15 +631,15 @@ export default function PlayGame() {
           <div className="flex-1 min-w-0 overflow-hidden w-full">
 
             {/* Game iframe with click-to-play overlay */}
-            <div className={`relative bg-white dark:bg-slate-900 overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm ${
+            <div id="game-player-container" className={`game-iframe-container relative bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm ${
               isFakeFullscreen
-                ? 'fixed inset-0 z-[9999] rounded-none border-none'
-                : 'rounded-2xl'
+                ? 'fullscreen-container'
+                : 'overflow-hidden rounded-2xl'
             }`}>
               {/* Fullscreen / Exit fullscreen button */}
               {gameStarted && (
                 <button
-                  onClick={isFakeFullscreen ? () => setIsFakeFullscreen(false) : handleFullscreen}
+                  onClick={isFakeFullscreen ? exitFullscreen : enterFullscreen}
                   className="absolute top-3 right-3 z-20 w-8 h-8 bg-slate-800/70 hover:bg-slate-800 text-white rounded-lg flex items-center justify-center transition-colors backdrop-blur-sm"
                   title={t('game.fullscreen' as any)}
                   aria-label={t('game.fullscreen' as any)}
@@ -622,6 +652,7 @@ export default function PlayGame() {
               {gameStarted && (
                 <button
                   onClick={() => {
+                    if (isFakeFullscreen) exitFullscreen();
                     setNextGame(getNextSuggestion(game));
                     setShowPlayNext(true);
                   }}

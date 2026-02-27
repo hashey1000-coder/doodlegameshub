@@ -236,13 +236,6 @@ function buildPageMeta(routePath, locale) {
           availability: 'https://schema.org/InStock',
         },
         educationalLevel: difficultyMap[game.difficulty] ?? 'Medium',
-        aggregateRating: {
-          '@type': 'AggregateRating',
-          ratingValue: game.rating.toFixed(1),
-          bestRating: '5',
-          worstRating: '1',
-          ratingCount: String(game.playCount),
-        },
         publisher: {
           '@type': 'Organization',
           name: 'Google',

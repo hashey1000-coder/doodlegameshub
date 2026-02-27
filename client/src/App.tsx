@@ -36,24 +36,26 @@ function AppRoutes() {
     <>
       <ScrollToTop />
       <Navbar />
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route path="/play/:slug" component={PlayGame} />
-        <Route path="/games" component={AllGames} />
-        <Route path="/search" component={SearchResults} />
-        <Route path="/top-rated" component={TopRated} />
-        <Route path="/daily" component={Daily} />
-        <Route path="/about" component={About} />
-        <Route path="/contact" component={Contact} />
-        <Route path="/privacy" component={Privacy} />
-        <Route path="/sitemap" component={Sitemap} />
-        <Route path="/leaderboard">{() => <Redirect to="/top-rated" />}</Route>
-        <Route path="/a-z">{() => <Redirect to="/games" />}</Route>
-        <Route path="/az">{() => <Redirect to="/games" />}</Route>
-        <Route path="/kids">{() => <Redirect to="/" />}</Route>
-        <Route path="/404" component={NotFound} />
-        <Route component={NotFound} />
-      </Switch>
+      <main>
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/play/:slug" component={PlayGame} />
+          <Route path="/games" component={AllGames} />
+          <Route path="/search" component={SearchResults} />
+          <Route path="/top-rated" component={TopRated} />
+          <Route path="/daily" component={Daily} />
+          <Route path="/about" component={About} />
+          <Route path="/contact" component={Contact} />
+          <Route path="/privacy" component={Privacy} />
+          <Route path="/sitemap" component={Sitemap} />
+          <Route path="/leaderboard">{() => <Redirect to="/top-rated" />}</Route>
+          <Route path="/a-z">{() => <Redirect to="/games" />}</Route>
+          <Route path="/az">{() => <Redirect to="/games" />}</Route>
+          <Route path="/kids">{() => <Redirect to="/" />}</Route>
+          <Route path="/404" component={NotFound} />
+          <Route component={NotFound} />
+        </Switch>
+      </main>
       <Footer />
     </>
   );

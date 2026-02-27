@@ -367,8 +367,8 @@ export default function Home() {
                             </span>
                             {game.difficulty && (
                               <span className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                                game.difficulty === 'easy' ? 'bg-green-50 text-green-600' :
-                                game.difficulty === 'medium' ? 'bg-amber-50 text-amber-600' :
+                                game.difficulty === 'easy' ? 'bg-green-50 text-green-700' :
+                                game.difficulty === 'medium' ? 'bg-amber-50 text-amber-700' :
                                 'bg-red-50 text-red-600'
                               }`}>
                                 {t(`difficulty.${game.difficulty}` as any)}
@@ -378,7 +378,7 @@ export default function Home() {
                           <div className="flex items-center justify-between mt-auto">
                             <div className="flex items-center gap-0.5">
                               <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                              <span className="text-[11px] font-bold text-amber-600 dark:text-amber-500">{game.rating.toFixed(1)}</span>
+                              <span className="text-[11px] font-bold text-amber-700 dark:text-amber-500">{game.rating.toFixed(1)}</span>
                             </div>
                             <span className="text-[10px] text-slate-500 dark:text-slate-400">{formatPlayCount(game.playCount)} {t('common.plays')}</span>
                           </div>
@@ -658,7 +658,7 @@ export default function Home() {
             {activeTags.length > 0 ? ` · ${activeTags.length} ${t('home.tagFiltersActive')}` : ""}
           </p>
           {activeCategory === "top-rated" && (
-            <span className="text-[11px] bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded-full font-medium">
+            <span className="text-[11px] bg-amber-50 text-amber-700 border border-amber-100 px-2 py-0.5 rounded-full font-medium">
               {t('home.localLikes')}
             </span>
           )}
@@ -729,8 +729,8 @@ export default function Home() {
                             </span>
                             {game.difficulty && (
                               <span className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                                game.difficulty === 'easy' ? 'bg-green-50 text-green-600' :
-                                game.difficulty === 'medium' ? 'bg-amber-50 text-amber-600' :
+                                game.difficulty === 'easy' ? 'bg-green-50 text-green-700' :
+                                game.difficulty === 'medium' ? 'bg-amber-50 text-amber-700' :
                                 'bg-red-50 text-red-600'
                               }`}>
                                 {t(`difficulty.${game.difficulty}` as any)}
@@ -738,7 +738,7 @@ export default function Home() {
                             )}
                             {/* Like count badge for Top Rated view */}
                             {activeCategory === "top-rated" && likeCount > 0 && (
-                              <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600">
+                              <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700">
                                 <ThumbsUp className="w-2.5 h-2.5" />
                                 {likeCount}
                               </span>
@@ -761,7 +761,7 @@ export default function Home() {
                           <div className="flex items-center justify-between mt-auto">
                             <div className="flex items-center gap-0.5">
                               <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                              <span className="text-[11px] font-bold text-amber-600 dark:text-amber-500">{game.rating.toFixed(1)}</span>
+                              <span className="text-[11px] font-bold text-amber-700 dark:text-amber-500">{game.rating.toFixed(1)}</span>
                             </div>
                             <span className="text-[10px] text-slate-500 dark:text-slate-400">{formatPlayCount(game.playCount)} {t('common.plays')}</span>
                           </div>

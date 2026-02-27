@@ -180,6 +180,8 @@ export default function Daily() {
               <img
                 src={game.thumbnail}
                 alt={gameTitle}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   const el = e.target as HTMLImageElement;
@@ -303,6 +305,8 @@ export default function Daily() {
                     <img
                       src={g.thumbnail}
                       alt={getGameT(locale, g).title}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       onError={(e) => {
                         const el = e.target as HTMLImageElement;

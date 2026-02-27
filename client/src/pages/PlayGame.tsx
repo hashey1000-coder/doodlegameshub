@@ -679,6 +679,8 @@ export default function PlayGame() {
                   <img
                     src={game.thumbnail}
                     alt={gt(game).title}
+                    loading="lazy"
+                    decoding="async"
                     className="absolute inset-0 w-full h-full object-cover"
                     style={{ filter: "brightness(0.45)" }}
                     onError={(e) => {
@@ -1177,6 +1179,8 @@ export default function PlayGame() {
                   <img
                     src={nextGame.thumbnail}
                     alt={gt(nextGame).title}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       const el = e.target as HTMLImageElement;

@@ -180,7 +180,7 @@ export default function Navbar() {
               <span className="font-bold text-slate-900 dark:text-white text-[15px] tracking-tight">
                 <span className="text-violet-600">Doodle</span>
                 <span>Games</span>
-                <span className="text-[10px] font-semibold text-violet-400 ml-0.5 align-top mt-0.5 inline-block">HUB</span>
+                <span className="text-[10px] font-semibold text-violet-500 ml-0.5 align-top mt-0.5 inline-block">HUB</span>
               </span>
             </div>
           </Link>
@@ -200,15 +200,15 @@ export default function Navbar() {
           {/* Right side */}
           <div className="flex items-center gap-1.5 shrink-0">
             {/* Mobile search icon */}
-            <Link href="/search/">
+            <Link href="/search/" aria-label="Search games">
               <span className="md:hidden w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                 <Search className="w-4 h-4" />
               </span>
             </Link>
 
             {/* Desktop nav links */}
-            <Link href="/" onClick={markAllSeen}>
-              <span className={`relative text-sm font-medium transition-colors px-3 py-1.5 rounded-full hidden md:inline-flex items-center gap-1 ${isActive('/') ? 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/50' : 'text-slate-600 dark:text-slate-300 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/50'}`}>
+            <Link href="/" onClick={markAllSeen} className="hidden md:block" aria-label={t('nav.allGames')}>
+              <span className={`relative text-sm font-medium transition-colors px-3 py-1.5 rounded-full inline-flex items-center gap-1 ${isActive('/') ? 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/50' : 'text-slate-600 dark:text-slate-300 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/50'}`}>
                 {t('nav.allGames')}
                 {unseenCount > 0 && (
                   <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none animate-pulse">
@@ -218,22 +218,22 @@ export default function Navbar() {
               </span>
             </Link>
 
-            <Link href="/games/">
-              <span className={`flex items-center gap-1.5 text-sm font-medium transition-colors px-3 py-1.5 rounded-full hidden md:inline-flex ${isActive('/games/') ? 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/50' : 'text-slate-600 dark:text-slate-300 hover:text-violet-600 hover:bg-violet-50'}`}>
+            <Link href="/games/" className="hidden md:block" aria-label={t('nav.aToZ')}>
+              <span className={`flex items-center gap-1.5 text-sm font-medium transition-colors px-3 py-1.5 rounded-full inline-flex ${isActive('/games/') ? 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/50' : 'text-slate-600 dark:text-slate-300 hover:text-violet-600 hover:bg-violet-50'}`}>
                 <LayoutList className="w-3.5 h-3.5" />
                 {t('nav.aToZ')}
               </span>
             </Link>
 
-            <Link href="/daily/">
-              <span className={`flex items-center gap-1.5 text-sm font-medium transition-colors px-3 py-1.5 rounded-full hidden lg:inline-flex ${isActive('/daily/') ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50' : 'text-slate-600 dark:text-slate-300 hover:text-amber-600 hover:bg-amber-50'}`}>
+            <Link href="/daily/" className="hidden lg:block" aria-label={t('nav.daily')}>
+              <span className={`flex items-center gap-1.5 text-sm font-medium transition-colors px-3 py-1.5 rounded-full inline-flex ${isActive('/daily/') ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50' : 'text-slate-600 dark:text-slate-300 hover:text-amber-600 hover:bg-amber-50'}`}>
                 <CalendarDays className="w-3.5 h-3.5" />
                 {t('nav.daily')}
               </span>
             </Link>
 
-            <Link href="/top-rated/">
-              <span className={`flex items-center gap-1.5 text-sm font-medium transition-colors px-3 py-1.5 rounded-full hidden lg:inline-flex ${isActive('/top-rated/') ? 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/50' : 'text-slate-600 dark:text-slate-300 hover:text-yellow-600 hover:bg-yellow-50'}`}>
+            <Link href="/top-rated/" className="hidden lg:block" aria-label={t('nav.leaderboard')}>
+              <span className={`flex items-center gap-1.5 text-sm font-medium transition-colors px-3 py-1.5 rounded-full inline-flex ${isActive('/top-rated/') ? 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/50' : 'text-slate-600 dark:text-slate-300 hover:text-yellow-600 hover:bg-yellow-50'}`}>
                 <Trophy className="w-3.5 h-3.5" />
                 {t('nav.leaderboard')}
               </span>

@@ -215,6 +215,8 @@ export default function AllGames() {
                             <img
                               src={game.thumbnail}
                               alt={gt(game).title}
+                              loading="lazy"
+                              decoding="async"
                               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                               onError={(e) => {
                                 const el = e.target as HTMLImageElement;

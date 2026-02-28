@@ -73,47 +73,54 @@ export function useGameTranslate(): (game: Game) => { title: string; description
 }
 
 // ---------------------------------------------------------------------------
-// Translation data  — imported from per-locale files to keep this file small
+// Translation data  — lazy-loaded per locale to avoid a 762KB upfront download
 // ---------------------------------------------------------------------------
 
-import { ES_GAMES } from './translations/es';
-import { FR_GAMES } from './translations/fr';
-import { DE_GAMES } from './translations/de';
-import { IT_GAMES } from './translations/it';
-import { PT_GAMES } from './translations/pt';
-import { RU_GAMES } from './translations/ru';
-import { AR_GAMES } from './translations/ar';
-import { HI_GAMES } from './translations/hi';
-import { TR_GAMES } from './translations/tr';
-import { NL_GAMES } from './translations/nl';
-import { PL_GAMES } from './translations/pl';
-import { SV_GAMES } from './translations/sv';
-import { ID_GAMES } from './translations/id';
-import { VI_GAMES } from './translations/vi';
-import { TH_GAMES } from './translations/th';
-import { ZH_CN_GAMES } from './translations/zh-CN';
-import { ZH_TW_GAMES } from './translations/zh-TW';
-import { JA_GAMES } from './translations/ja';
-import { KO_GAMES } from './translations/ko';
+/** Mutable map — locales are added lazily or eagerly (SSR) */
+export const GAME_TRANSLATIONS: GameTranslationMap = {};
 
-export const GAME_TRANSLATIONS: GameTranslationMap = {
-  es: ES_GAMES,
-  fr: FR_GAMES,
-  de: DE_GAMES,
-  it: IT_GAMES,
-  pt: PT_GAMES,
-  ru: RU_GAMES,
-  ar: AR_GAMES,
-  hi: HI_GAMES,
-  tr: TR_GAMES,
-  nl: NL_GAMES,
-  pl: PL_GAMES,
-  sv: SV_GAMES,
-  id: ID_GAMES,
-  vi: VI_GAMES,
-  th: TH_GAMES,
-  'zh-CN': ZH_CN_GAMES,
-  'zh-TW': ZH_TW_GAMES,
-  ja: JA_GAMES,
-  ko: KO_GAMES,
+/** Dynamic import loaders for each locale's game translations */
+const GAME_LOCALE_LOADERS: Record<string, () => Promise<Record<string, GameTranslation>>> = {
+  es: () => import('./translations/es').then(m => m.ES_GAMES),
+  fr: () => import('./translations/fr').then(m => m.FR_GAMES),
+  de: () => import('./translations/de').then(m => m.DE_GAMES),
+  it: () => import('./translations/it').then(m => m.IT_GAMES),
+  pt: () => import('./translations/pt').then(m => m.PT_GAMES),
+  ru: () => import('./translations/ru').then(m => m.RU_GAMES),
+  ar: () => import('./translations/ar').then(m => m.AR_GAMES),
+  hi: () => import('./translations/hi').then(m => m.HI_GAMES),
+  tr: () => import('./translations/tr').then(m => m.TR_GAMES),
+  nl: () => import('./translations/nl').then(m => m.NL_GAMES),
+  pl: () => import('./translations/pl').then(m => m.PL_GAMES),
+  sv: () => import('./translations/sv').then(m => m.SV_GAMES),
+  id: () => import('./translations/id').then(m => m.ID_GAMES),
+  vi: () => import('./translations/vi').then(m => m.VI_GAMES),
+  th: () => import('./translations/th').then(m => m.TH_GAMES),
+  'zh-CN': () => import('./translations/zh-CN').then(m => m.ZH_CN_GAMES),
+  'zh-TW': () => import('./translations/zh-TW').then(m => m.ZH_TW_GAMES),
+  ja: () => import('./translations/ja').then(m => m.JA_GAMES),
+  ko: () => import('./translations/ko').then(m => m.KO_GAMES),
 };
+
+const _gameLoadCache: Partial<Record<string, Promise<void>>> = {};
+
+/**
+ * Lazily load game translations for a locale. Safe to call multiple times.
+ */
+export function loadGameLocale(code: string): Promise<void> {
+  if (code === 'en' || GAME_TRANSLATIONS[code]) return Promise.resolve();
+  if (_gameLoadCache[code]) return _gameLoadCache[code]!;
+  const loader = GAME_LOCALE_LOADERS[code];
+  if (!loader) return Promise.resolve();
+  _gameLoadCache[code] = loader().then(data => {
+    GAME_TRANSLATIONS[code] = data;
+  });
+  return _gameLoadCache[code]!;
+}
+
+/**
+ * Register game translations eagerly (used by SSR / prerender).
+ */
+export function registerGameTranslations(locale: string, map: Record<string, GameTranslation>) {
+  GAME_TRANSLATIONS[locale] = map;
+}

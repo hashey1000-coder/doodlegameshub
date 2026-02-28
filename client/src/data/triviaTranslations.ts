@@ -46,47 +46,47 @@ export function getTriviaT(locale: string, slug: string): string | undefined {
 }
 
 // ---------------------------------------------------------------------------
-// Translation data — imported from per-locale files
+// Translation data — lazy-loaded per locale
 // ---------------------------------------------------------------------------
 
-import { ES_TRIVIA } from './translations/trivia/es';
-import { FR_TRIVIA } from './translations/trivia/fr';
-import { DE_TRIVIA } from './translations/trivia/de';
-import { IT_TRIVIA } from './translations/trivia/it';
-import { PT_TRIVIA } from './translations/trivia/pt';
-import { RU_TRIVIA } from './translations/trivia/ru';
-import { AR_TRIVIA } from './translations/trivia/ar';
-import { HI_TRIVIA } from './translations/trivia/hi';
-import { TR_TRIVIA } from './translations/trivia/tr';
-import { NL_TRIVIA } from './translations/trivia/nl';
-import { PL_TRIVIA } from './translations/trivia/pl';
-import { SV_TRIVIA } from './translations/trivia/sv';
-import { ID_TRIVIA } from './translations/trivia/id';
-import { VI_TRIVIA } from './translations/trivia/vi';
-import { TH_TRIVIA } from './translations/trivia/th';
-import { ZH_CN_TRIVIA } from './translations/trivia/zh-CN';
-import { ZH_TW_TRIVIA } from './translations/trivia/zh-TW';
-import { JA_TRIVIA } from './translations/trivia/ja';
-import { KO_TRIVIA } from './translations/trivia/ko';
+/** Mutable map — locales are added lazily or eagerly (SSR) */
+export const TRIVIA_TRANSLATIONS: TriviaTranslationMap = {};
 
-export const TRIVIA_TRANSLATIONS: TriviaTranslationMap = {
-  es: ES_TRIVIA,
-  fr: FR_TRIVIA,
-  de: DE_TRIVIA,
-  it: IT_TRIVIA,
-  pt: PT_TRIVIA,
-  ru: RU_TRIVIA,
-  ar: AR_TRIVIA,
-  hi: HI_TRIVIA,
-  tr: TR_TRIVIA,
-  nl: NL_TRIVIA,
-  pl: PL_TRIVIA,
-  sv: SV_TRIVIA,
-  id: ID_TRIVIA,
-  vi: VI_TRIVIA,
-  th: TH_TRIVIA,
-  'zh-CN': ZH_CN_TRIVIA,
-  'zh-TW': ZH_TW_TRIVIA,
-  ja: JA_TRIVIA,
-  ko: KO_TRIVIA,
+const TRIVIA_LOCALE_LOADERS: Record<string, () => Promise<Record<string, string>>> = {
+  es: () => import('./translations/trivia/es').then(m => m.ES_TRIVIA),
+  fr: () => import('./translations/trivia/fr').then(m => m.FR_TRIVIA),
+  de: () => import('./translations/trivia/de').then(m => m.DE_TRIVIA),
+  it: () => import('./translations/trivia/it').then(m => m.IT_TRIVIA),
+  pt: () => import('./translations/trivia/pt').then(m => m.PT_TRIVIA),
+  ru: () => import('./translations/trivia/ru').then(m => m.RU_TRIVIA),
+  ar: () => import('./translations/trivia/ar').then(m => m.AR_TRIVIA),
+  hi: () => import('./translations/trivia/hi').then(m => m.HI_TRIVIA),
+  tr: () => import('./translations/trivia/tr').then(m => m.TR_TRIVIA),
+  nl: () => import('./translations/trivia/nl').then(m => m.NL_TRIVIA),
+  pl: () => import('./translations/trivia/pl').then(m => m.PL_TRIVIA),
+  sv: () => import('./translations/trivia/sv').then(m => m.SV_TRIVIA),
+  id: () => import('./translations/trivia/id').then(m => m.ID_TRIVIA),
+  vi: () => import('./translations/trivia/vi').then(m => m.VI_TRIVIA),
+  th: () => import('./translations/trivia/th').then(m => m.TH_TRIVIA),
+  'zh-CN': () => import('./translations/trivia/zh-CN').then(m => m.ZH_CN_TRIVIA),
+  'zh-TW': () => import('./translations/trivia/zh-TW').then(m => m.ZH_TW_TRIVIA),
+  ja: () => import('./translations/trivia/ja').then(m => m.JA_TRIVIA),
+  ko: () => import('./translations/trivia/ko').then(m => m.KO_TRIVIA),
 };
+
+const _triviaLoadCache: Partial<Record<string, Promise<void>>> = {};
+
+export function loadTriviaLocale(code: string): Promise<void> {
+  if (code === 'en' || TRIVIA_TRANSLATIONS[code]) return Promise.resolve();
+  if (_triviaLoadCache[code]) return _triviaLoadCache[code]!;
+  const loader = TRIVIA_LOCALE_LOADERS[code];
+  if (!loader) return Promise.resolve();
+  _triviaLoadCache[code] = loader().then(data => {
+    TRIVIA_TRANSLATIONS[code] = data;
+  });
+  return _triviaLoadCache[code]!;
+}
+
+export function registerTriviaTranslations(locale: string, map: Record<string, string>) {
+  TRIVIA_TRANSLATIONS[locale] = map;
+}

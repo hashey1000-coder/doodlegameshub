@@ -222,6 +222,18 @@ export default function Home() {
           role="banner"
           aria-label={t('home.heroAriaLabel' as any)}
         >
+          {/* Real <img> for the hero background — discoverable from prerendered HTML
+              without waiting for CSS to download. Uses srcSet for responsive loading. */}
+          <img
+            src="/hero-bg.webp"
+            srcSet="/hero-bg-480.webp 480w, /hero-bg-960.webp 960w, /hero-bg.webp 1498w"
+            sizes="(max-width: 640px) 480px, (max-width: 1024px) 960px, 1498px"
+            alt=""
+            aria-hidden="true"
+            fetchPriority="high"
+            decoding="async"
+            className="hero-bg-img"
+          />
           {/* Animated gradient overlay — breathes in/out */}
           <div className="hero-overlay-breathe absolute inset-0 bg-gradient-to-r from-violet-950/88 via-violet-900/72 to-violet-900/20 rounded-3xl" />
 

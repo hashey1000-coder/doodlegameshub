@@ -1,6 +1,5 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/NotFound";
 import { Router as WouterRouter, Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ScrollToTop from "./components/ScrollToTop";
@@ -11,7 +10,8 @@ import { StreakProvider } from "./contexts/StreakContext";
 import { KidsModeProvider } from "./contexts/KidsModeContext";
 import { LanguageProvider, useLanguage, SUPPORTED_LOCALES } from "./contexts/LanguageContext";
 
-// All routes eagerly loaded — eliminates Suspense flash on navigation
+// All pages loaded eagerly — prerendered HTML hydrates seamlessly without
+// content flash. The big perf win is lazy translations, not page splitting.
 import Home from "./pages/Home";
 import PlayGame from "./pages/PlayGame";
 import AllGames from "./pages/AllGames";
@@ -23,6 +23,7 @@ import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
 import Sitemap from "./pages/Sitemap";
 import Redirect from "./pages/Redirect";
+import NotFound from "./pages/NotFound";
 
 /**
  * The inner routes — rendered inside a WouterRouter whose `base` is already

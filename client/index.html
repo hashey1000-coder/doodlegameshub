@@ -49,7 +49,9 @@
     }
     </script>
     <!-- Preload hero background image (LCP element on homepage) -->
-    <link rel="preload" as="image" type="image/webp" href="/hero-bg.webp" fetchpriority="high" />
+    <link rel="preload" as="image" type="image/webp" fetchpriority="high"
+          imagesrcset="/hero-bg-480.webp 480w, /hero-bg-960.webp 960w, /hero-bg.webp 1498w"
+          imagesizes="(max-width: 640px) 480px, (max-width: 1024px) 960px, 1498px" />
     <!-- DNS-prefetch for game hosting domains (speeds up first game load) -->
     <link rel="dns-prefetch" href="https://game3.glov3.me" />
     <link rel="dns-prefetch" href="https://web.archive.org" />

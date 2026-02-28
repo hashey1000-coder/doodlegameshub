@@ -19,6 +19,7 @@ import {
   SUPPORTED_LOCALES,
   getLocaleFromPath,
   getTranslation,
+  registerTranslations,
 } from './contexts/LanguageContext';
 import { TooltipProvider } from './components/ui/tooltip';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -29,6 +30,110 @@ import Footer from './components/Footer';
 export { GAMES } from './data/games';
 export { getGameT } from './data/gameTranslations';
 export { getTranslation, SUPPORTED_LOCALES } from './contexts/LanguageContext';
+
+// ---------------------------------------------------------------------------
+// Eagerly import ALL translations for SSR (runs at build time, not in browser)
+// ---------------------------------------------------------------------------
+import { registerGameTranslations } from './data/gameTranslations';
+import { registerTriviaTranslations } from './data/triviaTranslations';
+
+// UI translations
+import { ES } from './contexts/locales/es';
+import { FR } from './contexts/locales/fr';
+import { DE } from './contexts/locales/de';
+import { IT } from './contexts/locales/it';
+import { PT } from './contexts/locales/pt';
+import { RU } from './contexts/locales/ru';
+import { AR } from './contexts/locales/ar';
+import { HI } from './contexts/locales/hi';
+import { TR } from './contexts/locales/tr';
+import { NL } from './contexts/locales/nl';
+import { PL } from './contexts/locales/pl';
+import { SV } from './contexts/locales/sv';
+import { ID } from './contexts/locales/id';
+import { VI } from './contexts/locales/vi';
+import { TH } from './contexts/locales/th';
+import { ZH_CN } from './contexts/locales/zh-CN';
+import { ZH_TW } from './contexts/locales/zh-TW';
+import { JA } from './contexts/locales/ja';
+import { KO } from './contexts/locales/ko';
+
+// Game translations
+import { ES_GAMES } from './data/translations/es';
+import { FR_GAMES } from './data/translations/fr';
+import { DE_GAMES } from './data/translations/de';
+import { IT_GAMES } from './data/translations/it';
+import { PT_GAMES } from './data/translations/pt';
+import { RU_GAMES } from './data/translations/ru';
+import { AR_GAMES } from './data/translations/ar';
+import { HI_GAMES } from './data/translations/hi';
+import { TR_GAMES } from './data/translations/tr';
+import { NL_GAMES } from './data/translations/nl';
+import { PL_GAMES } from './data/translations/pl';
+import { SV_GAMES } from './data/translations/sv';
+import { ID_GAMES } from './data/translations/id';
+import { VI_GAMES } from './data/translations/vi';
+import { TH_GAMES } from './data/translations/th';
+import { ZH_CN_GAMES } from './data/translations/zh-CN';
+import { ZH_TW_GAMES } from './data/translations/zh-TW';
+import { JA_GAMES } from './data/translations/ja';
+import { KO_GAMES } from './data/translations/ko';
+
+// Register all UI translations eagerly for SSR
+registerTranslations('es', ES); registerTranslations('fr', FR);
+registerTranslations('de', DE); registerTranslations('it', IT);
+registerTranslations('pt', PT); registerTranslations('ru', RU);
+registerTranslations('ar', AR); registerTranslations('hi', HI);
+registerTranslations('tr', TR); registerTranslations('nl', NL);
+registerTranslations('pl', PL); registerTranslations('sv', SV);
+registerTranslations('id', ID); registerTranslations('vi', VI);
+registerTranslations('th', TH); registerTranslations('zh-CN', ZH_CN);
+registerTranslations('zh-TW', ZH_TW); registerTranslations('ja', JA);
+registerTranslations('ko', KO);
+
+// Register all game translations eagerly for SSR
+registerGameTranslations('es', ES_GAMES); registerGameTranslations('fr', FR_GAMES);
+registerGameTranslations('de', DE_GAMES); registerGameTranslations('it', IT_GAMES);
+registerGameTranslations('pt', PT_GAMES); registerGameTranslations('ru', RU_GAMES);
+registerGameTranslations('ar', AR_GAMES); registerGameTranslations('hi', HI_GAMES);
+registerGameTranslations('tr', TR_GAMES); registerGameTranslations('nl', NL_GAMES);
+registerGameTranslations('pl', PL_GAMES); registerGameTranslations('sv', SV_GAMES);
+registerGameTranslations('id', ID_GAMES); registerGameTranslations('vi', VI_GAMES);
+registerGameTranslations('th', TH_GAMES); registerGameTranslations('zh-CN', ZH_CN_GAMES);
+registerGameTranslations('zh-TW', ZH_TW_GAMES); registerGameTranslations('ja', JA_GAMES);
+registerGameTranslations('ko', KO_GAMES);
+
+// Trivia translations
+import { ES_TRIVIA } from './data/translations/trivia/es';
+import { FR_TRIVIA } from './data/translations/trivia/fr';
+import { DE_TRIVIA } from './data/translations/trivia/de';
+import { IT_TRIVIA } from './data/translations/trivia/it';
+import { PT_TRIVIA } from './data/translations/trivia/pt';
+import { RU_TRIVIA } from './data/translations/trivia/ru';
+import { AR_TRIVIA } from './data/translations/trivia/ar';
+import { HI_TRIVIA } from './data/translations/trivia/hi';
+import { TR_TRIVIA } from './data/translations/trivia/tr';
+import { NL_TRIVIA } from './data/translations/trivia/nl';
+import { PL_TRIVIA } from './data/translations/trivia/pl';
+import { SV_TRIVIA } from './data/translations/trivia/sv';
+import { ID_TRIVIA } from './data/translations/trivia/id';
+import { VI_TRIVIA } from './data/translations/trivia/vi';
+import { TH_TRIVIA } from './data/translations/trivia/th';
+import { ZH_CN_TRIVIA } from './data/translations/trivia/zh-CN';
+import { ZH_TW_TRIVIA } from './data/translations/trivia/zh-TW';
+import { JA_TRIVIA } from './data/translations/trivia/ja';
+import { KO_TRIVIA } from './data/translations/trivia/ko';
+
+registerTriviaTranslations('es', ES_TRIVIA); registerTriviaTranslations('fr', FR_TRIVIA);
+registerTriviaTranslations('de', DE_TRIVIA); registerTriviaTranslations('it', IT_TRIVIA);
+registerTriviaTranslations('pt', PT_TRIVIA); registerTriviaTranslations('ru', RU_TRIVIA);
+registerTriviaTranslations('ar', AR_TRIVIA); registerTriviaTranslations('hi', HI_TRIVIA);
+registerTriviaTranslations('tr', TR_TRIVIA); registerTriviaTranslations('nl', NL_TRIVIA);
+registerTriviaTranslations('pl', PL_TRIVIA); registerTriviaTranslations('sv', SV_TRIVIA);
+registerTriviaTranslations('id', ID_TRIVIA); registerTriviaTranslations('vi', VI_TRIVIA);
+registerTriviaTranslations('th', TH_TRIVIA); registerTriviaTranslations('zh-CN', ZH_CN_TRIVIA);
+registerTriviaTranslations('zh-TW', ZH_TW_TRIVIA); registerTriviaTranslations('ja', JA_TRIVIA);
+registerTriviaTranslations('ko', KO_TRIVIA);
 
 // Import all pages eagerly for static rendering (no lazy/Suspense)
 import Home from './pages/Home';

@@ -40,10 +40,6 @@ export default defineConfig({
           if (id.includes('node_modules/lucide-react/')) {
             return 'icons';
           }
-          // Translation data (large but rarely changes)
-          if (id.includes('/data/translations/') || id.includes('/data/gameTranslations') || id.includes('/data/triviaTranslations')) {
-            return 'translations';
-          }
           // Charts/carousel (only used on some pages)
           if (id.includes('node_modules/recharts/') || id.includes('node_modules/embla-carousel')) {
             return 'charts-carousel';
@@ -55,8 +51,8 @@ export default defineConfig({
         },
       },
     },
-    // Increase chunk size warning to avoid noise (translations chunk is intentionally large)
-    chunkSizeWarningLimit: 3000,
+    // Translations are now lazy-loaded, so chunks should be much smaller
+    chunkSizeWarningLimit: 1000,
   },
   server: {
     port: 3000,

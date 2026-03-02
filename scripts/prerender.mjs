@@ -44,6 +44,7 @@ const STATIC_PATHS = [
   '/about',
   '/contact',
   '/privacy',
+  '/privacy-policy',
   '/sitemap',
   '/leaderboard',
   '/a-z',
@@ -56,6 +57,44 @@ const STATIC_PATHS = [
 const GAME_PATHS = gameSlugs.map((slug) => `/play/${slug}`);
 
 const ALL_PATHS = [...STATIC_PATHS, ...GAME_PATHS];
+
+/**
+ * Deterministic daily game picker — mirrors getDailyGame() in Daily.tsx.
+ * Returns the GAMES entry for today's daily challenge so prerender can
+ * substitute {title} in the meta tags.
+ */
+function getDailyGameForPrerender() {
+  // GAMES is loaded later from the SSR module; this function is called
+  // after the SSR bundle is imported, so GAMES is available by then.
+  // We call it lazily from buildPageMeta.
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const day = now.getDate();
+  const seed = now.getFullYear() * 10000 + month * 100 + day;
+
+  const seasonalPicks = [
+    { month: 2, dayRange: [10, 15], slugs: ['doodle-valentines-day', 'doodle-valentines-day-2022'] },
+    { month: 5, dayRange: [8, 14], slugs: ['mothers-day-2013-doodle', 'mothers-day-2020-doodle'] },
+    { month: 4, dayRange: [18, 24], slugs: ['doodle-earth-day-2020'] },
+    { month: 10, dayRange: [25, 31], slugs: ['magic-cat-academy', 'halloween', 'magic-cat-academy-2', 'magic-cat-academy-3'] },
+    { month: 12, dayRange: [15, 28], slugs: ['google-santa-tracker', 'global-candy-cup-2015'] },
+    { month: 1, dayRange: [20, 31], slugs: ['chinese-new-year-snake-game'] },
+  ];
+
+  const seasonal = seasonalPicks.find(
+    (s) => s.month === month && (!s.dayRange || (day >= s.dayRange[0] && day <= s.dayRange[1]))
+  );
+
+  // GAMES is imported from SSR module — available after build step
+  if (typeof GAMES !== 'undefined' && GAMES.length > 0) {
+    if (seasonal) {
+      const matching = GAMES.filter((g) => seasonal.slugs.includes(g.slug));
+      if (matching.length > 0) return matching[seed % matching.length];
+    }
+    return GAMES[seed % GAMES.length];
+  }
+  return null;
+}
 
 /** Build the full URL path for a locale + route */
 function localeUrl(locale, routePath) {
@@ -178,6 +217,7 @@ const PAGE_SEO_MAP = {
   '/about': { titleKey: 'seo.about.title', descKey: null },
   '/contact': { titleKey: 'seo.contact.title', descKey: null },
   '/privacy': { titleKey: 'seo.privacy.title', descKey: null },
+  '/privacy-policy': { titleKey: 'seo.privacy.title', descKey: null, noindex: true, canonicalOverride: '/privacy/' },
   '/sitemap': { titleKey: 'seo.sitemap.title', descKey: 'seo.sitemap.description' },
   '/404': { titleKey: 'seo.notFound.title', descKey: null, noindex: true },
   '/leaderboard': { titleKey: 'seo.topRated.title', descKey: null, noindex: true },
@@ -294,10 +334,25 @@ function buildPageMeta(routePath, locale) {
   // ----- Static pages -----
   const seoMap = PAGE_SEO_MAP[normalizedPath];
   if (seoMap) {
-    const title = getTranslation(locale, seoMap.titleKey);
-    const description = seoMap.descKey
+    let title = getTranslation(locale, seoMap.titleKey);
+    let description = seoMap.descKey
       ? getTranslation(locale, seoMap.descKey)
       : getTranslation(locale, 'seo.defaultDescription');
+
+    // /daily/ — replace {title} placeholder with today's game title
+    if (normalizedPath === '/daily') {
+      const dailyGame = getDailyGameForPrerender();
+      if (dailyGame) {
+        const { title: gameTitle } = getGameT(locale, dailyGame);
+        title = title.replace('{title}', gameTitle);
+        description = description.replace('{title}', gameTitle);
+      }
+    }
+
+    // Override canonical for redirect pages (e.g. /privacy-policy → /privacy)
+    const ogUrl = seoMap.canonicalOverride
+      ? `${SITE_ORIGIN}${localeUrl(locale, seoMap.canonicalOverride)}`
+      : canonical;
 
     return {
       title,
@@ -306,7 +361,7 @@ function buildPageMeta(routePath, locale) {
       ogTitle: title,
       ogDescription: description,
       ogImage: null, // keep default site image
-      ogUrl: canonical,
+      ogUrl,
       ogType: 'website',
       twitterTitle: title,
       twitterDescription: description,

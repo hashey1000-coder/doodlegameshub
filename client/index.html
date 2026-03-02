@@ -16,6 +16,8 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <link rel="canonical" href="https://doodlegameshub.com/" />
+    <!-- Inline dark-mode init: apply .dark before first paint to prevent FOUC -->
+    <script>try{var d=localStorage.getItem("doodle-dark-mode");if(d==="true"||(d===null&&matchMedia("(prefers-color-scheme:dark)").matches))document.documentElement.classList.add("dark")}catch(e){}</script>
     <!-- Open Graph -->
     <meta property="og:title" content="Doodle Games Hub — Play All Google Doodle Games Free" />
     <meta property="og:description" content="Doodle Games Hub — a curated archive of 75 interactive Google Doodle games. Pac-Man, Cricket, Champion Island, Bach, Beethoven, Snake and more. Instant play, no download." />

@@ -21,19 +21,26 @@ export function ThemeProvider({
   defaultTheme = "light",
   switchable = false,
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => {
+  // Always start with the default theme (matching SSR) to avoid hydration mismatch
+  const [theme, setTheme] = useState<Theme>(defaultTheme);
+
+  // Sync from localStorage after mount
+  useEffect(() => {
     try {
       const darkPref = localStorage.getItem("doodle-dark-mode");
-      if (darkPref !== null) return darkPref === "true" ? "dark" : "light";
+      if (darkPref !== null) {
+        setTheme(darkPref === "true" ? "dark" : "light");
+        return;
+      }
       if (switchable) {
         const stored = localStorage.getItem("theme");
-        if (stored === "dark" || stored === "light") return stored;
+        if (stored === "dark" || stored === "light") {
+          setTheme(stored);
+          return;
+        }
       }
-    } catch {
-      // SSR or storage unavailable
-    }
-    return defaultTheme;
-  });
+    } catch {}
+  }, [switchable]);
 
   useEffect(() => {
     const root = document.documentElement;

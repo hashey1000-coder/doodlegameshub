@@ -125,10 +125,10 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-slate-500 text-xs">
+          <p className="text-slate-500 text-xs" suppressHydrationWarning>
             {t('footer.copyright', { year: new Date().getFullYear() })}
           </p>
-          <div className="flex items-center gap-4 text-xs text-slate-500">
+          <div className="flex items-center gap-4 text-xs text-slate-400">
             <Link href="/games/">
               <span className="hover:text-slate-300 transition-colors cursor-pointer">{t('nav.aToZ')}</span>
             </Link>

@@ -20,6 +20,8 @@ async function startServer() {
     res.setHeader("X-Frame-Options", "SAMEORIGIN");
     res.setHeader("X-XSS-Protection", "1; mode=block");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    // HSTS — force HTTPS for 1 year (preload-ready)
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
     // Permissions-Policy: disable unused browser features
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), interest-cohort=()");
     // Vary on encoding for correct CDN caching
@@ -61,6 +63,10 @@ async function startServer() {
       }
     }
   }));
+
+  // SEO redirects
+  app.get('/privacy-policy', (_req, res) => res.redirect(301, '/privacy/'));
+  app.get('/privacy-policy/', (_req, res) => res.redirect(301, '/privacy/'));
 
   // Handle client-side routing - serve index.html for all routes
   app.get("*", (_req, res) => {

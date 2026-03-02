@@ -16,16 +16,18 @@ export default function AllGames() {
   const [searchQuery, setSearchQuery] = useState("");
   const { favourites, toggleFavourite, isFavourite } = useFavourites();
   const letterRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [sortBy, setSortBy] = useState<'a-z' | 'most-played' | 'highest-rated' | 'newest'>(() => {
+  const [sortBy, setSortBy] = useState<'a-z' | 'most-played' | 'highest-rated' | 'newest'>('a-z');
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
+
+  // Sync sortBy from localStorage after mount (avoids hydration mismatch)
+  useEffect(() => {
     try {
       const saved = localStorage.getItem('doodle-sort-by');
       const valid = ['a-z', 'most-played', 'highest-rated', 'newest'];
-      if (valid.includes(saved ?? '')) return saved as 'a-z' | 'most-played' | 'highest-rated' | 'newest';
+      if (valid.includes(saved ?? '')) setSortBy(saved as typeof sortBy);
     } catch {}
-    return 'a-z';
-  });
-  const [showSortMenu, setShowSortMenu] = useState(false);
-  const sortMenuRef = useRef<HTMLDivElement>(null);
+  }, []);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -174,7 +176,7 @@ export default function AllGames() {
                   </button>
                 );
               })}
-              <div className="ml-auto text-sm text-slate-400 self-center">
+              <div className="ml-auto text-sm text-slate-500 dark:text-slate-400 self-center">
                 {sortedGames.length} {t('allGames.gamesCount')}
               </div>
             </div>
@@ -200,7 +202,7 @@ export default function AllGames() {
                     <span className="text-white font-bold text-lg leading-none">{letter}</span>
                   </h2>
                   <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
-                  <span className="text-xs text-slate-400 font-medium">{grouped[letter].length} {grouped[letter].length === 1 ? (t('allGames.gameCount' as any) || t('allGames.gamesCount')) : t('allGames.gamesCount')}</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{grouped[letter].length} {grouped[letter].length === 1 ? (t('allGames.gameCount' as any) || t('allGames.gamesCount')) : t('allGames.gamesCount')}</span>
                 </div>
 
                 {/* Games list for this letter */}

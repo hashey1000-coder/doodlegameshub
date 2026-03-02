@@ -26,6 +26,12 @@ ErrorDocument 403 /404.html
   RewriteRule ^az/?$ /games/ [R=301,L]
   RewriteRule ^leaderboard/?$ /top-rated/ [R=301,L]
   RewriteRule ^kids/?$ /?kidsMode=true [R=301,L]
+  # /privacy-policy/ → /privacy/ (canonical redirect)
+  RewriteRule ^privacy-policy/?$ /privacy/ [R=301,L]
+  RewriteRule ^(es|fr|de|it|pt|ru|zh-CN|zh-TW|ja|ko|ar|hi|tr|nl|pl|sv|id|vi|th)/privacy-policy/?$ /$1/privacy/ [R=301,L]
+  # /games/ serves the All Games page — pass through without redirect
+  RewriteRule ^games/?$ - [L]
+  RewriteRule ^(es|fr|de|it|pt|ru|zh-CN|zh-TW|ja|ko|ar|hi|tr|nl|pl|sv|id|vi|th)/games/?$ - [L]
   # /games/:slug/ → /play/:slug/  (old URL pattern)
   RewriteRule ^games/([^/]+)/?$ /play/$1/ [R=301,L]
   # Locale-aware variants of the above
@@ -123,6 +129,9 @@ ErrorDocument 403 /404.html
 # 5. Security Headers
 # ---------------------------------------------------------------------------
 <IfModule mod_headers.c>
+  # HSTS — force HTTPS for 1 year (preload-ready)
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
   # Prevent MIME-type sniffing
   Header set X-Content-Type-Options "nosniff"
 

@@ -23,19 +23,37 @@ function useLikeDislike(slug: string) {
   const userVoteKey = `game-uservote-${slug}`;
 
   const getSeededVotes = () => {
-    // Seed realistic initial vote counts from the game's rating/playCount
+    // Seed realistic initial vote counts from the game's rating/playCount.
+    // Uses log-scaled popularity so counts stay in a believable 80-150 range
+    // rather than scaling linearly with playCount (which hit 177K for popular games).
     const game = GAMES.find((g) => g.slug === slug);
     if (!game) return { likes: 0, dislikes: 0 };
-    // Generate a base vote count from rating & popularity
-    const baseLikes = Math.round(game.rating * (game.playCount || 50) / 100);
-    const baseDislikes = Math.round(baseLikes * (1 - game.rating / 5) * 0.3);
+    // Deterministic jitter from slug so numbers aren't all identical
+    const hash = slug.split('').reduce((acc, ch) => ((acc << 5) - acc + ch.charCodeAt(0)) | 0, 0);
+    const logPop = Math.log10(Math.max(game.playCount, 100));
+    const baseLikes = Math.round(game.rating * 12 + logPop * 8 + Math.abs(hash % 40));
+    const baseDislikes = Math.round(baseLikes * (1 - game.rating / 5) * 0.25);
     return { likes: Math.max(baseLikes, 1), dislikes: Math.max(baseDislikes, 0) };
   };
 
   const getVotes = () => {
     try {
       const stored = localStorage.getItem(storageKey);
-      return stored ? JSON.parse(stored) : getSeededVotes();
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const seeded = getSeededVotes();
+        // Auto-fix inflated values left by the old linear formula
+        if (parsed.likes > seeded.likes * 3) {
+          const uv = getUserVote();
+          const fixed = { ...seeded };
+          if (uv === 'like') fixed.likes += 1;
+          if (uv === 'dislike') fixed.dislikes += 1;
+          localStorage.setItem(storageKey, JSON.stringify(fixed));
+          return fixed;
+        }
+        return parsed;
+      }
+      return getSeededVotes();
     } catch {
       return getSeededVotes();
     }
@@ -49,9 +67,11 @@ function useLikeDislike(slug: string) {
     }
   };
 
-  const [votes, setVotes] = useState(getVotes);
-  const [userVote, setUserVote] = useState<"like" | "dislike" | null>(getUserVote);
+  // Start with seeded (deterministic) defaults to match SSR
+  const [votes, setVotes] = useState(getSeededVotes);
+  const [userVote, setUserVote] = useState<"like" | "dislike" | null>(null);
 
+  // Sync from localStorage after mount
   useEffect(() => {
     setVotes(getVotes());
     setUserVote(getUserVote());
@@ -596,7 +616,7 @@ export default function PlayGame() {
               {t('nav.allGames')}
             </span>
           </Link>
-          <span className="text-slate-300 dark:text-slate-400">/</span>
+          <span className="text-slate-400 dark:text-slate-500">/</span>
           <span className="text-slate-600 dark:text-slate-300 truncate max-w-[200px]">{gt(game).title}</span>
         </div>
 
@@ -615,7 +635,7 @@ export default function PlayGame() {
           }`}>
             {game.difficulty === 'easy' ? '😊' : game.difficulty === 'hard' ? '🔥' : '⚡'} {game.difficulty.charAt(0).toUpperCase() + game.difficulty.slice(1)}
           </span>
-          <span className="text-slate-300 dark:text-slate-400">·</span>
+          <span className="text-slate-400 dark:text-slate-500">·</span>
           <span className="text-sm text-slate-500 dark:text-slate-300">
             {game.playCount >= 1_000_000
               ? `${(game.playCount / 1_000_000).toFixed(1)}M ${t('common.plays')}`

@@ -2,7 +2,7 @@
  * KidsModeContext — global Kids Mode state shared across all components.
  * Persists to localStorage so the preference survives page refreshes.
  */
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 
 const STORAGE_KEY = "doodle-kids-mode";
 
@@ -22,7 +22,13 @@ interface KidsModeContextValue {
 const KidsModeContext = createContext<KidsModeContextValue | null>(null);
 
 export function KidsModeProvider({ children }: { children: ReactNode }) {
-  const [kidsMode, setKidsMode] = useState<boolean>(() => loadKidsMode());
+  // Start with false (matching SSR) to avoid hydration mismatch
+  const [kidsMode, setKidsMode] = useState(false);
+
+  // Sync from localStorage after mount
+  useEffect(() => {
+    setKidsMode(loadKidsMode());
+  }, []);
 
   const toggleKidsMode = useCallback(() => {
     setKidsMode((prev) => {

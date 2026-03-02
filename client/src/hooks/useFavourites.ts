@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 const STORAGE_KEY = "doodle-favourites";
 
@@ -20,7 +20,13 @@ function saveFavourites(slugs: string[]) {
 }
 
 export function useFavourites() {
-  const [favourites, setFavourites] = useState<string[]>(() => loadFavourites());
+  // Start with empty array (matching SSR) to avoid hydration mismatch
+  const [favourites, setFavourites] = useState<string[]>([]);
+
+  // Sync from localStorage after mount
+  useEffect(() => {
+    setFavourites(loadFavourites());
+  }, []);
 
   const toggleFavourite = useCallback((slug: string) => {
     setFavourites((prev) => {

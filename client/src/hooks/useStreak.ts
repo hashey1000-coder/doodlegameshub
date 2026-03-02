@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 const STORAGE_KEY = "doodle_streak";
 const MILESTONES = [3, 7, 30];
@@ -38,8 +38,16 @@ function writeStreak(data: StreakData): void {
 }
 
 export function useStreak() {
-  const [streakData, setStreakData] = useState<StreakData>(() => readStreak());
+  // Start with SSR-safe defaults — sync from localStorage after mount
+  const [streakData, setStreakData] = useState<StreakData>({
+    currentStreak: 0, lastPlayedDate: null, longestStreak: 0,
+  });
   const [milestoneHit, setMilestoneHit] = useState<number | null>(null);
+
+  // Sync from localStorage after mount (avoids hydration mismatch)
+  useEffect(() => {
+    setStreakData(readStreak());
+  }, []);
 
   const recordPlay = useCallback(() => {
     setStreakData((prev) => {

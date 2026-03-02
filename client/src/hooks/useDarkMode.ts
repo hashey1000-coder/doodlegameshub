@@ -5,16 +5,22 @@
 import { useState, useEffect } from "react";
 
 export function useDarkMode() {
-  const [isDark, setIsDark] = useState<boolean>(() => {
+  // Always start with false (matching SSR) to avoid hydration mismatch.
+  // The inline script in <head> applies the .dark class immediately so
+  // the page looks correct; we sync state after mount.
+  const [isDark, setIsDark] = useState(false);
+
+  // Read the real preference after mount (avoids hydration error #418)
+  useEffect(() => {
     try {
       const stored = localStorage.getItem("doodle-dark-mode");
-      if (stored !== null) return stored === "true";
-      // Default to system preference
-      return window.matchMedia("(prefers-color-scheme: dark)").matches;
-    } catch {
-      return false;
-    }
-  });
+      if (stored !== null) {
+        setIsDark(stored === "true");
+      } else {
+        setIsDark(window.matchMedia("(prefers-color-scheme: dark)").matches);
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     const html = document.documentElement;

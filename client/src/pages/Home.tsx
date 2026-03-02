@@ -21,44 +21,37 @@ function formatPlayCount(n: number): string {
   return String(n);
 }
 
+function getSeededLikes(slug: string): number {
+  const game = GAMES.find((g) => g.slug === slug);
+  if (!game) return 0;
+  const hash = slug.split('').reduce((acc, ch) => ((acc << 5) - acc + ch.charCodeAt(0)) | 0, 0);
+  const logPop = Math.log10(Math.max(game.playCount, 100));
+  return Math.max(Math.round(game.rating * 12 + logPop * 8 + Math.abs(hash % 40)), 1);
+}
+
 function getLikeCount(slug: string): number {
   try {
     const stored = localStorage.getItem(`game-votes-${slug}`);
     if (stored) {
       const parsed = JSON.parse(stored);
+      const seeded = getSeededLikes(slug);
+      // Auto-fix inflated values left by the old linear formula
+      if (parsed.likes > seeded * 3) return seeded;
       return parsed.likes || 0;
     }
-    // Seed from game data when no user votes exist
-    const game = GAMES.find((g) => g.slug === slug);
-    if (game) {
-      return Math.max(Math.round(game.rating * (game.playCount || 50) / 100), 1);
-    }
-    return 0;
+    return getSeededLikes(slug);
   } catch {
     return 0;
   }
 }
 
 export default function Home() {
-  const [activeCategory, setActiveCategory] = useState<string>(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const cat = params.get("category");
-      if (cat) return cat;
-    } catch { /* SSR */ }
-    return "all";
-  });
+  // Start with SSR-safe defaults — sync from URL/localStorage after mount
+  const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [favPulse, setFavPulse] = useState(false);
   const [activeTags, setActiveTags] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<'default' | 'most-played' | 'highest-rated' | 'a-z' | 'newest'>(() => {
-    try {
-      const saved = localStorage.getItem('doodle-sort-by');
-      const valid = ['default', 'most-played', 'highest-rated', 'a-z', 'newest'];
-      if (valid.includes(saved ?? '')) return saved as 'default' | 'most-played' | 'highest-rated' | 'a-z' | 'newest';
-    } catch { /* SSR */ }
-    return 'default';
-  });
+  const [sortBy, setSortBy] = useState<'default' | 'most-played' | 'highest-rated' | 'a-z' | 'newest'>('default');
 
   const [showSortMenu, setShowSortMenu] = useState(false);
   const sortMenuRef = useRef<HTMLDivElement>(null);
@@ -88,6 +81,15 @@ export default function Home() {
       });
     }
   }, [searchStr]);
+
+  // Sync sortBy from localStorage after mount (avoids hydration mismatch)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('doodle-sort-by');
+      const valid = ['default', 'most-played', 'highest-rated', 'a-z', 'newest'];
+      if (valid.includes(saved ?? '')) setSortBy(saved as typeof sortBy);
+    } catch {}
+  }, []);
 
   const gt = useGameTranslate();
   // SEO — localised page title + meta description
@@ -281,7 +283,7 @@ export default function Home() {
               </h1>
 
               {/* Subtext */}
-              <p className="hero-text-enter-delay-2 text-white/70 text-xs md:text-base max-w-md leading-relaxed">
+              <p className="hero-text-enter-delay-2 text-white/90 text-xs md:text-base max-w-md leading-relaxed">
                 {t('home.heroSubtitle')}
               </p>
 
@@ -294,7 +296,7 @@ export default function Home() {
                 ].map(({ value, label }) => (
                   <div key={label} className="flex items-center gap-1.5">
                     <span className="text-white font-bold text-base">{value}</span>
-                    <span className="text-white/50 text-xs">{label}</span>
+                    <span className="text-white/80 text-xs">{label}</span>
                     <span className="w-px h-3 bg-white/20 last:hidden" />
                   </div>
                 ))}
@@ -333,7 +335,7 @@ export default function Home() {
                 <Clock className="w-4 h-4 text-violet-600" />
               </div>
               <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">{t('home.recentlyPlayed')}</h2>
-              <span className="text-xs text-slate-400 dark:text-slate-500 font-medium ml-1">— {t('home.recentlyPlayedHint')}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium ml-1">— {t('home.recentlyPlayedHint')}</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {recentGames.map((game) => (

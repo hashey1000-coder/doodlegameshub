@@ -77,16 +77,20 @@ export default function Daily() {
   const { locale } = useLanguage();
   const { title: gameTitle, description: gameDesc, controls: gameControls } = useGameT(game);
   const { isFavourite, toggleFavourite } = useFavourites();
-  const [countdown, setCountdown] = useState(getCountdownToMidnight());
+  const [countdown, setCountdown] = useState<ReturnType<typeof getCountdownToMidnight> | null>(null);
   const [copied, setCopied] = useState(false);
   const [hasPlayed, setHasPlayed] = useState(false);
+  const [dayLabel, setDayLabel] = useState('');
   const dayNumber = getDayNumber();
 
   // Check if user already played today's challenge
   useEffect(() => {
     const key = `daily-played-${getTodayKey()}`;
     if (localStorage.getItem(key)) setHasPlayed(true);
-  }, []);
+    // Set client-only values after mount to avoid hydration mismatch
+    setDayLabel(getDayLabel());
+    setCountdown(getCountdownToMidnight());
+  }, []);;
 
   // Countdown timer
   useEffect(() => {
@@ -148,8 +152,8 @@ export default function Daily() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       {/* Header strip */}
-      <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white py-2 px-4 text-center text-sm font-medium">
-        <span className="opacity-90">🎯 {t('daily.challengeLabel' as any)} #{dayNumber} — {getDayLabel()}</span>
+      <div className="bg-gradient-to-r from-amber-600 to-orange-600 text-white py-2 px-4 text-center text-sm font-medium">
+        <span suppressHydrationWarning>🎯 {t('daily.challengeLabel' as any)} #{dayNumber}{dayLabel ? ` — ${dayLabel}` : ''}</span>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -272,19 +276,19 @@ export default function Daily() {
             <Clock className="w-5 h-5 text-slate-400" />
             <h3 className="font-semibold text-slate-700 dark:text-slate-200">{t('daily.nextIn')}</h3>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3" suppressHydrationWarning>
             {[
-              { label: t('daily.countdown.hours'), value: pad(countdown.h) },
-              { label: t('daily.countdown.minutes'), value: pad(countdown.m) },
-              { label: t('daily.countdown.seconds'), value: pad(countdown.s) },
+              { label: t('daily.countdown.hours'), value: pad(countdown?.h ?? 0) },
+              { label: t('daily.countdown.minutes'), value: pad(countdown?.m ?? 0) },
+              { label: t('daily.countdown.seconds'), value: pad(countdown?.s ?? 0) },
             ].map(({ label, value }, i) => (
               <div key={label} className="flex items-center gap-3">
-                {i > 0 && <span className="text-2xl font-bold text-slate-300">:</span>}
+                {i > 0 && <span className="text-2xl font-bold text-slate-400 dark:text-slate-500">:</span>}
                 <div className="text-center">
                   <div className="text-3xl font-bold text-slate-900 dark:text-slate-100 tabular-nums w-16 text-center bg-slate-50 dark:bg-slate-800 rounded-xl py-2">
                     {value}
                   </div>
-                  <div className="text-xs text-slate-400 mt-1 font-medium">{label}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">{label}</div>
                 </div>
               </div>
             ))}
@@ -317,7 +321,7 @@ export default function Daily() {
                   </div>
                   <div className="p-2.5 flex-1 flex flex-col">
                     <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 line-clamp-1">{getGameT(locale, g).title}</p>
-                    <p className="text-[10px] text-slate-400 mt-auto">
+                    <p className="text-[10px] text-slate-400 mt-auto" suppressHydrationWarning>
                       {date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                     </p>
                   </div>

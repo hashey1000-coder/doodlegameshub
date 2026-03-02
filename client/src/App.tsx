@@ -50,6 +50,7 @@ function AppRoutes() {
           <Route path="/privacy" component={Privacy} />
           <Route path="/sitemap" component={Sitemap} />
           <Route path="/leaderboard">{() => <Redirect to="/top-rated" />}</Route>
+          <Route path="/privacy-policy">{() => <Redirect to="/privacy" />}</Route>
           <Route path="/a-z">{() => <Redirect to="/games" />}</Route>
           <Route path="/az">{() => <Redirect to="/games" />}</Route>
           <Route path="/kids">{() => <Redirect to="/" />}</Route>

@@ -5,14 +5,16 @@ const STORAGE_KEY = "doodle_recently_played";
 const MAX_RECENT = 8;
 
 export function useRecentlyPlayed(allGames: Game[]) {
-  const [recentSlugs, setRecentSlugs] = useState<string[]>(() => {
+  // Start with empty array (matching SSR) to avoid hydration mismatch
+  const [recentSlugs, setRecentSlugs] = useState<string[]>([]);
+
+  // Sync from localStorage after mount
+  useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+      if (stored) setRecentSlugs(JSON.parse(stored));
+    } catch {}
+  }, []);
 
   const addRecentlyPlayed = useCallback((slug: string) => {
     setRecentSlugs((prev) => {

@@ -51,7 +51,7 @@ export const GAMES: Game[] = [
     description: `The iconic Google Snake game reimagined with a modern twist. Guide your growing serpent around the board to eat fruit without hitting the walls or your own tail. As your snake grows longer, every move becomes a puzzle. How long can you keep it going before the inevitable crash?\n\nSnake's origins trace back to the late 1970s, but it became a worldwide phenomenon when Nokia pre-installed it on their mobile phones in 1998. Google's browser version faithfully captures that addictive simplicity while adding colourful graphics and smooth animations. It consistently ranks among the most-played Google games, proving that timeless gameplay never goes out of style.`,
     category: 'classic',
     thumbnail: '/thumbnails/snake.png',
-    iframeUrl: 'https://game3.glov3.me/uploads/game/html5/7567/',
+    iframeUrl: 'https://23azostore.github.io/s8/google-snake/',
     controls: `Use the Arrow Keys or WASD to steer your snake. Eat the fruit that appears on the board to grow longer and score points. Avoid hitting the walls or your own tail — either ends the game. The snake moves continuously, so plan your path ahead. On mobile, swipe in the direction you want to turn.`,
     difficulty: 'easy',
     tags: ['arcade', 'keyboard', 'endless', 'classic', 'kids-friendly'],

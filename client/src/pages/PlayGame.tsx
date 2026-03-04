@@ -6,7 +6,7 @@ const lazyConfetti = () => import("canvas-confetti").then(m => m.default);
 import { toast } from "sonner";
 import { Link, useParams, useLocation, useSearch } from "wouter";
 import { Maximize2, Minimize2, ChevronLeft, Play, ThumbsUp, ThumbsDown, Gamepad2, X, Share2, Check, ArrowRight, Shuffle, SkipForward, Trophy } from "lucide-react";
-import { GAMES, type Game } from "@/data/games";
+import { GAMES, ALL_TAGS, type Game } from "@/data/games";
 import { useGameTranslate, getGameT } from '@/data/gameTranslations';
 import { GAME_TRIVIA } from "@/data/trivia";
 import GamePageSkeleton from "@/components/GamePageSkeleton";
@@ -156,8 +156,11 @@ export default function PlayGame() {
       // requestFullscreen rejects on iOS for iframe-containing divs — catch it
       if (container.requestFullscreen) {
         await container.requestFullscreen();
+        // Also set isFakeFullscreen so the iframe gets w-full h-full class
+        setIsFakeFullscreen(true);
       } else if ((container as any).webkitRequestFullscreen) {
         await (container as any).webkitRequestFullscreen();
+        setIsFakeFullscreen(true);
       } else {
         enterCSSFullscreen();
       }
@@ -179,10 +182,11 @@ export default function PlayGame() {
       else if ((document as any).webkitExitFullscreen) (document as any).webkitExitFullscreen();
       else if ((document as any).mozCancelFullScreen) (document as any).mozCancelFullScreen();
       else if ((document as any).msExitFullscreen) (document as any).msExitFullscreen();
-    } else {
-      exitCSSFullscreen();
     }
+    // Always reset CSS fullscreen state (covers both native and CSS modes)
+    exitCSSFullscreen();
   }
+
   const t = useT();
   const gt = useGameTranslate();
   const { locale } = useLanguage();
@@ -196,6 +200,25 @@ export default function PlayGame() {
   const [showControls, setShowControls] = useState(false);
   const [isFakeFullscreen, setIsFakeFullscreen] = useState(false);
   const [moreGames, setMoreGames] = useState<Game[]>([]);
+
+  // Sync isFakeFullscreen when user exits native fullscreen via Escape
+  useEffect(() => {
+    const handler = () => {
+      const isNativeFS = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement
+      );
+      if (!isNativeFS) {
+        exitCSSFullscreen();
+      }
+    };
+    document.addEventListener('fullscreenchange', handler);
+    document.addEventListener('webkitfullscreenchange', handler);
+    return () => {
+      document.removeEventListener('fullscreenchange', handler);
+      document.removeEventListener('webkitfullscreenchange', handler);
+    };
+  }, []);
 
   // Play Next overlay state
   const [showPlayNext, setShowPlayNext] = useState(false);
@@ -408,15 +431,31 @@ export default function PlayGame() {
     };
   }, [gameStarted, game]);
 
+  // Slug aliases for legacy/broken URLs that still get traffic
+  const SLUG_ALIASES: Record<string, string> = {
+    'alan-turing-machine-doodle': 'alan-turing-machine',
+    'google-feud': 'feud',
+  };
+
   useEffect(() => {
     if (routeSlug) {
-      const found = GAMES.find((g) => g.slug === routeSlug);
+      // Strip trailing slash and resolve aliases
+      const clean = routeSlug.replace(/\/$/, '');
+      const resolved = SLUG_ALIASES[clean] || clean;
+
+      // If the slug was aliased, redirect to the canonical URL
+      if (resolved !== clean) {
+        navigate(`/play/${resolved}/`, { replace: true });
+        return;
+      }
+
+      const found = GAMES.find((g) => g.slug === resolved);
       if (found) {
         setGame(found);
         setGameStarted(false);
         setShowPlayNext(false);
         setMoreGames(getRelatedGames(found, 20));
-        addRecentlyPlayed(routeSlug);
+        addRecentlyPlayed(resolved);
         recordPlay();
       }
     }
@@ -497,10 +536,44 @@ export default function PlayGame() {
         },
       });
       document.head.appendChild(script);
+
+      // BreadcrumbList JSON-LD
+      const existingBread = document.getElementById('jsonld-breadcrumb');
+      if (existingBread) existingBread.remove();
+      const breadScript = document.createElement('script');
+      breadScript.id = 'jsonld-breadcrumb';
+      breadScript.type = 'application/ld+json';
+      breadScript.textContent = JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Doodle Games Hub',
+            item: window.location.origin + '/',
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: t('nav.allGames'),
+            item: window.location.origin + (locale === 'en' ? '' : `/${locale}`) + '/games/',
+          },
+          {
+            '@type': 'ListItem',
+            position: 3,
+            name: gameSeo.gameTitle,
+            item: window.location.href,
+          },
+        ],
+      });
+      document.head.appendChild(breadScript);
     }
     return () => {
       const script = document.getElementById('jsonld-game');
       if (script) script.remove();
+      const bread = document.getElementById('jsonld-breadcrumb');
+      if (bread) bread.remove();
     };
   }, [game, gameSeo]);
 
@@ -617,7 +690,7 @@ export default function PlayGame() {
             </span>
           </Link>
           <span className="text-slate-400 dark:text-slate-500">/</span>
-          <span className="text-slate-600 dark:text-slate-300 truncate max-w-[200px]">{gt(game).title}</span>
+          <span className="text-slate-600 dark:text-slate-300 truncate max-w-[70vw] sm:max-w-none">{gt(game).title}</span>
         </div>
 
         {/* Title */}
@@ -894,7 +967,8 @@ export default function PlayGame() {
                   .filter((tag) => tag !== game.category && tag !== game.difficulty)
                   .slice(0, 4)
                   .map((tag) => {
-                    const label = (t(`tag.${tag.replace(/-/g, '')}` as any) || tag.replace(/-/g, ' ')).replace(/^tag[.:]\s*/i, '');
+                    const tagInfo = ALL_TAGS.find((at) => at.id === tag);
+                    const label = tagInfo ? (t(tagInfo.labelKey as any) || tag.replace(/-/g, ' ')) : tag.replace(/-/g, ' ');
                     return (
                       <span key={tag} className="inline-block text-[11px] font-medium px-2.5 py-1 rounded-full bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 capitalize">
                         {label}

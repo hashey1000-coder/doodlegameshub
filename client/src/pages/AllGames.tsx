@@ -61,7 +61,7 @@ export default function AllGames() {
     }
     switch (sortBy) {
       case 'most-played': return games.sort((a, b) => (b.playCount ?? 0) - (a.playCount ?? 0));
-      case 'highest-rated': return games.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+      case 'highest-rated': return games.sort((a, b) => (b.playCount ?? 0) - (a.playCount ?? 0));
       case 'newest': return games.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0) || gt(a).title.localeCompare(gt(b).title));
       default: return games.sort((a, b) => gt(a).title.localeCompare(gt(b).title));
     }

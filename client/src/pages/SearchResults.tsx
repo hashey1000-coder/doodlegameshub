@@ -119,7 +119,7 @@ export default function SearchResults() {
     }
     switch (sortBy) {
       case 'most-played': return filtered.sort((a, b) => (b.playCount ?? 0) - (a.playCount ?? 0));
-      case 'highest-rated': return filtered.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+      case 'highest-rated': return filtered.sort((a, b) => (b.playCount ?? 0) - (a.playCount ?? 0));
       case 'a-z': return filtered.sort((a, b) => gt(a).title.localeCompare(gt(b).title));
       case 'newest': return filtered.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0) || gt(a).title.localeCompare(gt(b).title));
       default: return filtered;

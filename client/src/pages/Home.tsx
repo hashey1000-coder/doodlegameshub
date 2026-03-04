@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { Link, useLocation, useSearch } from "wouter";
-import { Search, Gamepad2, Clock, Play, Heart, ThumbsUp, Baby, X, Tag, ChevronDown, ChevronUp, Star, ArrowUpDown } from "lucide-react";
+import { Search, Gamepad2, Clock, Play, Heart, ThumbsUp, Baby, X, Tag, ChevronDown, ChevronUp, ArrowUpDown } from "lucide-react";
 import { GAMES, CATEGORIES, ALL_TAGS } from "@/data/games";
 import { useRecentlyPlayed } from "@/hooks/useRecentlyPlayed";
 import { useFavourites } from "@/hooks/useFavourites";
@@ -21,25 +21,14 @@ function formatPlayCount(n: number): string {
   return String(n);
 }
 
-function getSeededLikes(slug: string): number {
-  const game = GAMES.find((g) => g.slug === slug);
-  if (!game) return 0;
-  const hash = slug.split('').reduce((acc, ch) => ((acc << 5) - acc + ch.charCodeAt(0)) | 0, 0);
-  const logPop = Math.log10(Math.max(game.playCount, 100));
-  return Math.max(Math.round(game.rating * 12 + logPop * 8 + Math.abs(hash % 40)), 1);
-}
-
 function getLikeCount(slug: string): number {
   try {
     const stored = localStorage.getItem(`game-votes-${slug}`);
     if (stored) {
       const parsed = JSON.parse(stored);
-      const seeded = getSeededLikes(slug);
-      // Auto-fix inflated values left by the old linear formula
-      if (parsed.likes > seeded * 3) return seeded;
       return parsed.likes || 0;
     }
-    return getSeededLikes(slug);
+    return 0;
   } catch {
     return 0;
   }
@@ -184,7 +173,7 @@ export default function Home() {
       if (sortBy === 'most-played') {
         games = [...games].sort((a, b) => (b.playCount || 0) - (a.playCount || 0));
       } else if (sortBy === 'highest-rated') {
-        games = [...games].sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        games = [...games].sort((a, b) => getLikeCount(b.slug) - getLikeCount(a.slug));
       } else if (sortBy === 'a-z') {
         games = [...games].sort((a, b) => a.title.localeCompare(b.title));
       } else if (sortBy === 'newest') {
@@ -389,11 +378,7 @@ export default function Home() {
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center justify-between mt-auto">
-                            <div className="flex items-center gap-0.5">
-                              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                              <span className="text-[11px] font-bold text-amber-700 dark:text-amber-500">{game.rating.toFixed(1)}</span>
-                            </div>
+                          <div className="flex items-center justify-end mt-auto">
                             <span className="text-[10px] text-slate-500 dark:text-slate-400">{formatPlayCount(game.playCount)} {t('common.plays')}</span>
                           </div>
                         </div>
@@ -771,12 +756,8 @@ export default function Home() {
                               })}
                             </div>
                           )}
-                          {/* Rating + play count row */}
-                          <div className="flex items-center justify-between mt-auto">
-                            <div className="flex items-center gap-0.5">
-                              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                              <span className="text-[11px] font-bold text-amber-700 dark:text-amber-500">{game.rating.toFixed(1)}</span>
-                            </div>
+                          {/* Play count row */}
+                          <div className="flex items-center justify-end mt-auto">
                             <span className="text-[10px] text-slate-500 dark:text-slate-400">{formatPlayCount(game.playCount)} {t('common.plays')}</span>
                           </div>
                         </div>

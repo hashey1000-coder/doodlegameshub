@@ -17,23 +17,14 @@ import { CATEGORY_COLORS, CATEGORY_COLORS_BORDERED, CATEGORY_ACCENT, CATEGORY_FA
 import { prefetchGameUrl } from '@/lib/utils';
 import { useHead } from '@/hooks/useHead';
 
-// Persist likes/dislikes in localStorage — seeded from game.rating
+// Persist likes/dislikes in localStorage — seeded from playCount
 function useLikeDislike(slug: string) {
   const storageKey = `game-votes-${slug}`;
   const userVoteKey = `game-uservote-${slug}`;
 
   const getSeededVotes = () => {
-    // Seed realistic initial vote counts from the game's rating/playCount.
-    // Uses log-scaled popularity so counts stay in a believable 80-150 range
-    // rather than scaling linearly with playCount (which hit 177K for popular games).
-    const game = GAMES.find((g) => g.slug === slug);
-    if (!game) return { likes: 0, dislikes: 0 };
-    // Deterministic jitter from slug so numbers aren't all identical
-    const hash = slug.split('').reduce((acc, ch) => ((acc << 5) - acc + ch.charCodeAt(0)) | 0, 0);
-    const logPop = Math.log10(Math.max(game.playCount, 100));
-    const baseLikes = Math.round(game.rating * 12 + logPop * 8 + Math.abs(hash % 40));
-    const baseDislikes = Math.round(baseLikes * (1 - game.rating / 5) * 0.25);
-    return { likes: Math.max(baseLikes, 1), dislikes: Math.max(baseDislikes, 0) };
+    // Start all games at 0 likes / 0 dislikes so votes are purely organic.
+    return { likes: 0, dislikes: 0 };
   };
 
   const getVotes = () => {
@@ -41,17 +32,7 @@ function useLikeDislike(slug: string) {
       const stored = localStorage.getItem(storageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
-        const seeded = getSeededVotes();
-        // Auto-fix inflated values left by the old linear formula
-        if (parsed.likes > seeded.likes * 3) {
-          const uv = getUserVote();
-          const fixed = { ...seeded };
-          if (uv === 'like') fixed.likes += 1;
-          if (uv === 'dislike') fixed.dislikes += 1;
-          localStorage.setItem(storageKey, JSON.stringify(fixed));
-          return fixed;
-        }
-        return parsed;
+        return { likes: parsed.likes || 0, dislikes: parsed.dislikes || 0 };
       }
       return getSeededVotes();
     } catch {

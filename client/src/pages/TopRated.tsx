@@ -18,15 +18,11 @@ function readAllVotes(): Record<string, { likes: number; dislikes: number }> {
         const parsed = JSON.parse(stored);
         result[game.slug] = { likes: parsed.likes || 0, dislikes: parsed.dislikes || 0 };
       } else {
-        // Seed from game data when no user votes exist
-        const baseLikes = Math.max(Math.round(game.rating * (game.playCount || 50) / 100), 1);
-        const baseDislikes = Math.max(Math.round(baseLikes * (1 - game.rating / 5) * 0.3), 0);
-        result[game.slug] = { likes: baseLikes, dislikes: baseDislikes };
+        // No user votes yet — start at zero
+        result[game.slug] = { likes: 0, dislikes: 0 };
       }
     } catch {
-      const baseLikes = Math.max(Math.round(game.rating * (game.playCount || 50) / 100), 1);
-      const baseDislikes = Math.max(Math.round(baseLikes * (1 - game.rating / 5) * 0.3), 0);
-      result[game.slug] = { likes: baseLikes, dislikes: baseDislikes };
+      result[game.slug] = { likes: 0, dislikes: 0 };
     }
   }
   return result;

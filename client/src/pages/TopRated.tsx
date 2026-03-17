@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useT } from "@/contexts/LanguageContext";
 import { Link } from "wouter";
-import { Trophy, ThumbsUp, ThumbsDown, ArrowLeft } from "lucide-react";
+import { Trophy, ThumbsUp, ThumbsDown, ArrowLeft, TrendingUp, Star, Medal } from "lucide-react";
 import { GAMES } from "@/data/games";
 import { useGameTranslate } from '@/data/gameTranslations';
 import AnimatedCard from "@/components/AnimatedCard";

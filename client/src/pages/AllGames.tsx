@@ -18,18 +18,18 @@ export default function AllGames() {
   const { favourites, toggleFavourite, isFavourite } = useFavourites();
   const { getLikes } = useAllVotes();
   const letterRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [sortBy, setSortBy] = useState<'a-z' | 'most-played' | 'highest-rated' | 'newest'>('a-z');
-  const [showSortMenu, setShowSortMenu] = useState(false);
-  const sortMenuRef = useRef<HTMLDivElement>(null);
-
-  // Sync sortBy from localStorage after mount (avoids hydration mismatch)
-  useEffect(() => {
+  // Initialise sortBy directly from localStorage so the first render already
+  // shows the user's saved sort preference — no flash / reorder after mount.
+  const [sortBy, setSortBy] = useState<'a-z' | 'most-played' | 'highest-rated' | 'newest'>(() => {
     try {
       const saved = localStorage.getItem('doodle-sort-by');
       const valid = ['a-z', 'most-played', 'highest-rated', 'newest'];
-      if (valid.includes(saved ?? '')) setSortBy(saved as typeof sortBy);
+      if (saved && valid.includes(saved)) return saved as 'a-z' | 'most-played' | 'highest-rated' | 'newest';
     } catch {}
-  }, []);
+    return 'a-z';
+  });
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {

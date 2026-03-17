@@ -21,26 +21,22 @@ export function ThemeProvider({
   defaultTheme = "light",
   switchable = false,
 }: ThemeProviderProps) {
-  // Always start with the default theme (matching SSR) to avoid hydration mismatch
-  const [theme, setTheme] = useState<Theme>(defaultTheme);
-
-  // Sync from localStorage after mount
-  useEffect(() => {
+  // Read from localStorage synchronously so the first render already has the
+  // correct theme. This prevents the double-render FOUC where the "apply class"
+  // effect briefly removes the `dark` class that the inline <head> script added.
+  // During SSR/prerender there is no `window`, so we fall back to defaultTheme.
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window === 'undefined') return defaultTheme;
     try {
       const darkPref = localStorage.getItem("doodle-dark-mode");
-      if (darkPref !== null) {
-        setTheme(darkPref === "true" ? "dark" : "light");
-        return;
-      }
+      if (darkPref !== null) return darkPref === "true" ? "dark" : "light";
       if (switchable) {
         const stored = localStorage.getItem("theme");
-        if (stored === "dark" || stored === "light") {
-          setTheme(stored);
-          return;
-        }
+        if (stored === "dark" || stored === "light") return stored as Theme;
       }
     } catch {}
-  }, [switchable]);
+    return defaultTheme;
+  });
 
   useEffect(() => {
     const root = document.documentElement;

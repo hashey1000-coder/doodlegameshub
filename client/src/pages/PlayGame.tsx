@@ -746,7 +746,7 @@ export default function PlayGame() {
                     </div>
                     <div className="text-center">
                       <p className="text-white font-bold text-xl drop-shadow-lg">{gt(game).title}</p>
-                      <p className="text-white/70 text-sm mt-1">{iframeLoaded ? t('game.play') : (t('game.loading' as any) || 'Loading...')}</p>
+                      <p className="text-white/70 text-sm mt-1">{t('game.play')}</p>
                     </div>
                   </div>
                 </div>
@@ -802,13 +802,14 @@ export default function PlayGame() {
                 </div>
               )}
 
-              {/* Game iframe — loads eagerly so it's ready when the user clicks Play.
+              {/* Game iframe — src is only set after the user clicks Play so the game
+                  doesn't start running (audio / animation) before the overlay is dismissed.
                   pointer-events disabled while overlay is showing to prevent accidental
                   interaction and to stop the iframe from stealing scroll/touch events. */}
               <iframe
                 ref={iframeRef}
                 id="game-iframe"
-                src={game.iframeUrl}
+                src={gameStarted ? game.iframeUrl : ''}
                 title={gt(game).title}
                 className={isFakeFullscreen
                   ? 'w-full h-full'
@@ -823,7 +824,7 @@ export default function PlayGame() {
                 allow="fullscreen; autoplay"
                 // @ts-expect-error -- fetchpriority is valid HTML but not yet in React's types
                 fetchpriority="high"
-                onLoad={() => setIframeLoaded(true)}
+                onLoad={() => { if (gameStartedRef.current) setIframeLoaded(true); }}
               />
 
             </div>

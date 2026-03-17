@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { Link, useLocation, useSearch } from "wouter";
-import { Search, Gamepad2, Clock, Play, Heart, ThumbsUp, Baby, X, Tag, ChevronDown, ChevronUp, ArrowUpDown } from "lucide-react";
+import { Search, Gamepad2, Clock, Play, Heart, ThumbsUp, Baby, X, Tag, ChevronDown, ChevronUp, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { GAMES, CATEGORIES, ALL_TAGS } from "@/data/games";
 import { useRecentlyPlayed } from "@/hooks/useRecentlyPlayed";
 import { useFavourites } from "@/hooks/useFavourites";
@@ -14,33 +14,22 @@ import { useGameTranslate } from '@/data/gameTranslations';
 import { CATEGORY_COLORS } from '@/data/categoryColors';
 import { prefetchGameUrl } from '@/lib/utils';
 import { useHead } from '@/hooks/useHead';
+import { useAllVotes } from '@/hooks/useAllVotes';
 
-function formatPlayCount(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
-  return String(n);
-}
-
-function getLikeCount(slug: string): number {
-  try {
-    const stored = localStorage.getItem(`game-votes-${slug}`);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      return parsed.likes || 0;
-    }
-    return 0;
-  } catch {
-    return 0;
-  }
-}
 
 export default function Home() {
   // Start with SSR-safe defaults — sync from URL/localStorage after mount
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, _setActiveCategory] = useState("all");
+  const [searchQuery, _setSearchQuery] = useState("");
   const [favPulse, setFavPulse] = useState(false);
-  const [activeTags, setActiveTags] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<'default' | 'most-played' | 'highest-rated' | 'a-z' | 'newest'>('default');
+  const [activeTags, _setActiveTags] = useState<string[]>([]);
+  const [sortBy, _setSortBy] = useState<'default' | 'most-played' | 'highest-rated' | 'a-z' | 'newest'>('default');
+  const [currentPage, setCurrentPage] = useState(1);
+  const GAMES_PER_PAGE = 24;
+  const setActiveCategory = useCallback((v: string) => { _setActiveCategory(v); setCurrentPage(1); }, []);
+  const setSearchQuery = useCallback((v: string) => { _setSearchQuery(v); setCurrentPage(1); }, []);
+  const setActiveTags = useCallback((v: string[] | ((prev: string[]) => string[])) => { _setActiveTags(v); setCurrentPage(1); }, []);
+  const setSortBy = useCallback((v: Parameters<typeof _setSortBy>[0]) => { _setSortBy(v); setCurrentPage(1); }, []);
 
   const [showSortMenu, setShowSortMenu] = useState(false);
   const sortMenuRef = useRef<HTMLDivElement>(null);
@@ -51,6 +40,7 @@ export default function Home() {
   const { favourites, toggleFavourite, isFavourite } = useFavourites();
   const { kidsMode, toggleKidsMode } = useKidsMode();
   const { markAllSeen } = useNewGames();
+  const { getLikes } = useAllVotes();
   const [, navigate] = useLocation();
   const searchStr = useSearch();
   const t = useT();
@@ -167,13 +157,13 @@ export default function Home() {
 
     // Sort by likes for Top Rated tab
     if (activeCategory === "top-rated") {
-      games = [...games].sort((a, b) => getLikeCount(b.slug) - getLikeCount(a.slug));
+      games = [...games].sort((a, b) => getLikes(b.slug) - getLikes(a.slug));
     } else {
       // Apply user-selected sort
       if (sortBy === 'most-played') {
         games = [...games].sort((a, b) => (b.playCount || 0) - (a.playCount || 0));
       } else if (sortBy === 'highest-rated') {
-        games = [...games].sort((a, b) => getLikeCount(b.slug) - getLikeCount(a.slug));
+        games = [...games].sort((a, b) => getLikes(b.slug) - getLikes(a.slug));
       } else if (sortBy === 'a-z') {
         games = [...games].sort((a, b) => a.title.localeCompare(b.title));
       } else if (sortBy === 'newest') {
@@ -182,7 +172,13 @@ export default function Home() {
     }
 
     return games;
-  }, [activeCategory, searchQuery, favourites, kidsMode, activeTags, sortBy]);
+  }, [activeCategory, searchQuery, favourites, kidsMode, activeTags, sortBy, getLikes]);
+
+  const totalPages = Math.ceil(filteredGames.length / GAMES_PER_PAGE);
+  const paginatedGames = useMemo(
+    () => filteredGames.slice((currentPage - 1) * GAMES_PER_PAGE, currentPage * GAMES_PER_PAGE),
+    [filteredGames, currentPage]
+  );
 
   return (
     <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950">
@@ -379,7 +375,12 @@ export default function Home() {
                             )}
                           </div>
                           <div className="flex items-center justify-end mt-auto">
-                            <span className="text-[10px] text-slate-500 dark:text-slate-400">{formatPlayCount(game.playCount)} {t('common.plays')}</span>
+                            {getLikes(game.slug) > 0 && (
+                              <span className="flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400">
+                                <ThumbsUp className="w-2.5 h-2.5" />
+                                {getLikes(game.slug)}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -673,9 +674,10 @@ export default function Home() {
 
         {/* Game Grid */}
         {filteredGames.length > 0 ? (
+          <>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {filteredGames.map((game, index) => {
-              const likeCount = getLikeCount(game.slug);
+            {paginatedGames.map((game, index) => {
+              const likeCount = getLikes(game.slug);
               /* First 6 images are above-fold LCP candidates — load eagerly */
               const isAboveFold = index < 6;
               return (
@@ -756,9 +758,14 @@ export default function Home() {
                               })}
                             </div>
                           )}
-                          {/* Play count row */}
+                          {/* Like count row */}
                           <div className="flex items-center justify-end mt-auto">
-                            <span className="text-[10px] text-slate-500 dark:text-slate-400">{formatPlayCount(game.playCount)} {t('common.plays')}</span>
+                            {likeCount > 0 && (
+                              <span className="flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400">
+                                <ThumbsUp className="w-2.5 h-2.5" />
+                                {likeCount}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -798,6 +805,28 @@ export default function Home() {
               );
             })}
           </div>
+          {totalPages > 1 && (
+            <div className="mt-8 flex items-center justify-center gap-3">
+              <button
+                onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                disabled={currentPage === 1}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 hover:border-violet-300 hover:text-violet-600 dark:hover:border-violet-500 dark:hover:text-violet-400 transition-all"
+              >
+                <ChevronLeft className="w-4 h-4" /> Previous
+              </button>
+              <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                disabled={currentPage === totalPages}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 hover:border-violet-300 hover:text-violet-600 dark:hover:border-violet-500 dark:hover:text-violet-400 transition-all"
+              >
+                Next <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+          </>
         ) : activeCategory === "favourites" ? (
           <div className="text-center py-16">
             <div className="text-5xl mb-4">💔</div>

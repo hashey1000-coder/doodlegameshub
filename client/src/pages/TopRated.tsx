@@ -1,32 +1,14 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useT } from "@/contexts/LanguageContext";
 import { Link } from "wouter";
-import { Trophy, ThumbsUp, ThumbsDown, ArrowLeft, Medal, TrendingUp, Star } from "lucide-react";
+import { Trophy, ThumbsUp, ThumbsDown, ArrowLeft } from "lucide-react";
 import { GAMES } from "@/data/games";
 import { useGameTranslate } from '@/data/gameTranslations';
 import AnimatedCard from "@/components/AnimatedCard";
 import { CATEGORY_COLORS, CATEGORY_COLORS_BORDERED } from '@/data/categoryColors';
 import { prefetchGameUrl } from '@/lib/utils';
 import { useHead } from '@/hooks/useHead';
-
-function readAllVotes(): Record<string, { likes: number; dislikes: number }> {
-  const result: Record<string, { likes: number; dislikes: number }> = {};
-  for (const game of GAMES) {
-    try {
-      const stored = localStorage.getItem(`game-votes-${game.slug}`);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        result[game.slug] = { likes: parsed.likes || 0, dislikes: parsed.dislikes || 0 };
-      } else {
-        // No user votes yet — start at zero
-        result[game.slug] = { likes: 0, dislikes: 0 };
-      }
-    } catch {
-      result[game.slug] = { likes: 0, dislikes: 0 };
-    }
-  }
-  return result;
-}
+import { useAllVotes } from '@/hooks/useAllVotes';
 
 function getRatioPercent(likes: number, dislikes: number): number {
   const total = likes + dislikes;
@@ -43,12 +25,7 @@ const RANK_STYLES = [
 export default function TopRated() {
   const t = useT();
   const gt = useGameTranslate();
-  // Read votes fresh on every mount so navigation from a game page shows updated data
-  const [allVotes, setAllVotes] = useState<Record<string, { likes: number; dislikes: number }>>(() => readAllVotes());
-
-  useEffect(() => {
-    setAllVotes(readAllVotes());
-  }, []);
+  const { getLikes, votesMap } = useAllVotes();
 
   // SEO — localised page title + meta description
   useHead({
@@ -59,15 +36,15 @@ export default function TopRated() {
 
   const rankedGames = useMemo(() => {
     return GAMES.map((game) => {
-      const votes = allVotes[game.slug] || { likes: 0, dislikes: 0 };
-      return { ...game, ...votes, ratio: getRatioPercent(votes.likes, votes.dislikes) };
+      const likes = getLikes(game.slug);
+      const dislikes = votesMap.get(game.slug)?.dislikes ?? 0;
+      return { ...game, likes, dislikes, ratio: getRatioPercent(likes, dislikes) };
     }).sort((a, b) => {
-      // Primary: likes descending; secondary: ratio descending; tertiary: title
       if (b.likes !== a.likes) return b.likes - a.likes;
       if (b.ratio !== a.ratio) return b.ratio - a.ratio;
       return a.title.localeCompare(b.title);
     });
-  }, [allVotes]);
+  }, [getLikes, votesMap]);
 
   const topThree = rankedGames.slice(0, 3);
 
@@ -100,9 +77,7 @@ export default function TopRated() {
                 <span className="text-white/80 text-xs font-semibold tracking-widest uppercase">{t('topRated.hallOfFame')}</span>
               </div>
               <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('topRated.title')}</h1>
-              <p className="text-white/70 text-sm max-w-md">
-                {t('topRated.all' as any)} {GAMES.length} {t('topRated.subtitle')}
-              </p>
+              <p className="text-white/70 text-sm max-w-md">{t('topRated.subtitle')}</p>
             </div>
             {/* Stats */}
             <div className="flex gap-3 sm:gap-4 shrink-0 flex-wrap">

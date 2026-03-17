@@ -20,13 +20,13 @@ const CATEGORY_LINKS = [
 ];
 
 const QUICK_LINKS = [
-  { labelKey: "nav.aToZ", href: "/games" },
-  { labelKey: "nav.daily", href: "/daily" },
-  { labelKey: "nav.leaderboard", href: "/top-rated" },
+  { labelKey: "nav.aToZ", href: "/games/" },
+  { labelKey: "nav.daily", href: "/daily/" },
+  { labelKey: "nav.leaderboard", href: "/top-rated/" },
   { labelKey: "common.seeAll", href: "/" },
-  { labelKey: "nav.about", href: "/about" },
-  { labelKey: "nav.contact", href: "/contact" },
-  { labelKey: "nav.privacy", href: "/privacy" },
+  { labelKey: "nav.about", href: "/about/" },
+  { labelKey: "nav.contact", href: "/contact/" },
+  { labelKey: "nav.privacy", href: "/privacy/" },
 ];
 
 const POPULAR_GAME_SLUGS = [

@@ -49,6 +49,7 @@
     "compression": "^1.8.1",
     "embla-carousel-react": "^8.6.0",
     "express": "^4.21.2",
+    "firebase": "^12.10.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.453.0",
     "react": "^19.2.1",

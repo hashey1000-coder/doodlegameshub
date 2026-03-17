@@ -1,7 +1,7 @@
 import { useT } from "@/contexts/LanguageContext";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Link } from "wouter";
-import { Search, Heart, Play, ArrowUpDown, Check } from "lucide-react";
+import { Search, Heart, Play, ArrowUpDown, Check, ThumbsUp } from "lucide-react";
 import { GAMES } from "@/data/games";
 import { useFavourites } from "@/hooks/useFavourites";
 import AnimatedCard from "@/components/AnimatedCard";
@@ -9,12 +9,14 @@ import { useGameTranslate } from '@/data/gameTranslations';
 import { prefetchGameUrl } from '@/lib/utils';
 import { CATEGORY_COLORS } from '@/data/categoryColors';
 import { useHead } from '@/hooks/useHead';
+import { useAllVotes } from '@/hooks/useAllVotes';
 
 export default function AllGames() {
   const t = useT();
   const gt = useGameTranslate();
   const [searchQuery, setSearchQuery] = useState("");
   const { favourites, toggleFavourite, isFavourite } = useFavourites();
+  const { getLikes } = useAllVotes();
   const letterRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [sortBy, setSortBy] = useState<'a-z' | 'most-played' | 'highest-rated' | 'newest'>('a-z');
   const [showSortMenu, setShowSortMenu] = useState(false);
@@ -61,11 +63,11 @@ export default function AllGames() {
     }
     switch (sortBy) {
       case 'most-played': return games.sort((a, b) => (b.playCount ?? 0) - (a.playCount ?? 0));
-      case 'highest-rated': return games.sort((a, b) => (b.playCount ?? 0) - (a.playCount ?? 0));
+      case 'highest-rated': return games.sort((a, b) => getLikes(b.slug) - getLikes(a.slug));
       case 'newest': return games.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0) || gt(a).title.localeCompare(gt(b).title));
       default: return games.sort((a, b) => gt(a).title.localeCompare(gt(b).title));
     }
-  }, [searchQuery, sortBy, gt]);
+  }, [searchQuery, sortBy, gt, getLikes]);
 
   // Group by first letter
   const grouped = useMemo(() => {

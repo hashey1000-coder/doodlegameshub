@@ -5,8 +5,9 @@ import { SessionHistory } from "@/components/SessionHistory";
 const lazyConfetti = () => import("canvas-confetti").then(m => m.default);
 import { toast } from "sonner";
 import { Link, useParams, useLocation, useSearch } from "wouter";
-import { Maximize2, Minimize2, ChevronLeft, Play, ThumbsUp, ThumbsDown, Gamepad2, X, Share2, Check, ArrowRight, Shuffle, SkipForward, Trophy } from "lucide-react";
+import { Maximize2, Minimize2, ChevronLeft, Play, ThumbsUp, ThumbsDown, Gamepad2, X, Share2, Check, ArrowRight, Shuffle, SkipForward, Trophy, Volume2, VolumeX, ExternalLink } from "lucide-react";
 import { GAMES, ALL_TAGS, type Game } from "@/data/games";
+import { useGameVotes } from "@/hooks/useGameVotes";
 import { useGameTranslate, getGameT } from '@/data/gameTranslations';
 import { GAME_TRIVIA } from "@/data/trivia";
 import GamePageSkeleton from "@/components/GamePageSkeleton";
@@ -16,72 +17,6 @@ import { useStreakContext } from "@/contexts/StreakContext";
 import { CATEGORY_COLORS, CATEGORY_COLORS_BORDERED, CATEGORY_ACCENT, CATEGORY_FALLBACK } from '@/data/categoryColors';
 import { prefetchGameUrl } from '@/lib/utils';
 import { useHead } from '@/hooks/useHead';
-
-// Persist likes/dislikes in localStorage — seeded from playCount
-function useLikeDislike(slug: string) {
-  const storageKey = `game-votes-${slug}`;
-  const userVoteKey = `game-uservote-${slug}`;
-
-  const getSeededVotes = () => {
-    // Start all games at 0 likes / 0 dislikes so votes are purely organic.
-    return { likes: 0, dislikes: 0 };
-  };
-
-  const getVotes = () => {
-    try {
-      const stored = localStorage.getItem(storageKey);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        return { likes: parsed.likes || 0, dislikes: parsed.dislikes || 0 };
-      }
-      return getSeededVotes();
-    } catch {
-      return getSeededVotes();
-    }
-  };
-
-  const getUserVote = (): "like" | "dislike" | null => {
-    try {
-      return (localStorage.getItem(userVoteKey) as "like" | "dislike" | null);
-    } catch {
-      return null;
-    }
-  };
-
-  // Start with seeded (deterministic) defaults to match SSR
-  const [votes, setVotes] = useState(getSeededVotes);
-  const [userVote, setUserVote] = useState<"like" | "dislike" | null>(null);
-
-  // Sync from localStorage after mount
-  useEffect(() => {
-    setVotes(getVotes());
-    setUserVote(getUserVote());
-  }, [slug]);
-
-  const vote = (type: "like" | "dislike") => {
-    const current = getVotes();
-    const currentUserVote = getUserVote();
-    let newVotes = { ...current };
-
-    if (currentUserVote === type) {
-      newVotes[type === "like" ? "likes" : "dislikes"] = Math.max(0, newVotes[type === "like" ? "likes" : "dislikes"] - 1);
-      localStorage.removeItem(userVoteKey);
-      setUserVote(null);
-    } else {
-      if (currentUserVote === "like") newVotes.likes = Math.max(0, newVotes.likes - 1);
-      if (currentUserVote === "dislike") newVotes.dislikes = Math.max(0, newVotes.dislikes - 1);
-      if (type === "like") newVotes.likes += 1;
-      else newVotes.dislikes += 1;
-      localStorage.setItem(userVoteKey, type);
-      setUserVote(type);
-    }
-
-    localStorage.setItem(storageKey, JSON.stringify(newVotes));
-    setVotes(newVotes);
-  };
-
-  return { votes, userVote, vote };
-}
 
 // Get related games: same category first, then random
 function getRelatedGames(game: Game, count = 20): Game[] {
@@ -180,6 +115,7 @@ export default function PlayGame() {
   const [iframeError, setIframeError] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [isFakeFullscreen, setIsFakeFullscreen] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [moreGames, setMoreGames] = useState<Game[]>([]);
 
   // Sync isFakeFullscreen when user exits native fullscreen via Escape
@@ -454,7 +390,7 @@ export default function PlayGame() {
   }, [isFakeFullscreen]);
 
   const gameSlug = routeSlug ?? game?.slug ?? "";
-  const { votes, userVote, vote } = useLikeDislike(gameSlug);
+  const { votes, userVote, vote } = useGameVotes(gameSlug);
   const [copied, setCopied] = useState(false);
 
   // SEO — useHead manages title, meta, OG, twitter, hreflang, canonical
@@ -570,6 +506,22 @@ export default function PlayGame() {
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  const handleMuteToggle = useCallback(() => {
+    const newMuted = !isMuted;
+    setIsMuted(newMuted);
+    try {
+      // Attempt to mute audio/video inside the iframe (works for same-origin only)
+      const doc = iframeRef.current?.contentDocument ?? iframeRef.current?.contentWindow?.document;
+      if (doc) {
+        doc.querySelectorAll('audio, video').forEach((el) => {
+          (el as HTMLMediaElement).muted = newMuted;
+        });
+      }
+    } catch {
+      // Cross-origin — silently ignored; user can use system volume
+    }
+  }, [isMuted]);
 
   const handleCopyChallenge = async () => {
     const url = `${window.location.origin}${locale === 'en' ? '' : `/${locale}`}/play/${game?.slug}/?challenge=true`;
@@ -690,12 +642,10 @@ export default function PlayGame() {
             {game.difficulty === 'easy' ? '😊' : game.difficulty === 'hard' ? '🔥' : '⚡'} {game.difficulty.charAt(0).toUpperCase() + game.difficulty.slice(1)}
           </span>
           <span className="text-slate-400 dark:text-slate-500">·</span>
-          <span className="text-sm text-slate-500 dark:text-slate-300">
-            {game.playCount >= 1_000_000
-              ? `${(game.playCount / 1_000_000).toFixed(1)}M ${t('common.plays')}`
-              : game.playCount >= 1_000
-              ? `${(game.playCount / 1_000).toFixed(0)}K ${t('common.plays')}`
-              : `${game.playCount} ${t('common.plays')}`}
+          {/* Votes display */}
+          <span className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+            <ThumbsUp className="w-3.5 h-3.5 text-emerald-500" />
+            <span>{votes.likes}</span>
           </span>
         </div>
 
@@ -704,38 +654,67 @@ export default function PlayGame() {
           {/* Game column */}
           <div className="flex-1 min-w-0 overflow-hidden w-full">
 
+            {/* ── External-only game (no iframe) ── */}
+            {game.externalUrl ? (
+              <a
+                href={game.externalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full relative overflow-hidden rounded-2xl bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm aspect-[4/3] sm:aspect-[16/10] md:h-[560px] flex items-center justify-center group cursor-pointer"
+              >
+                <img
+                  src={game.thumbnail}
+                  alt={gt(game).title}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  style={{ filter: 'brightness(0.35)' }}
+                  loading="eager"
+                />
+                <div className="relative z-10 flex flex-col items-center gap-5 px-6 text-center">
+                  <div className="w-20 h-20 rounded-full bg-white/15 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:bg-white/25 transition-all duration-200">
+                    <Play className="w-9 h-9 text-white fill-white ml-1" />
+                  </div>
+                  <div>
+                    <p className="text-white font-bold text-xl drop-shadow-lg mb-1">{gt(game).title}</p>
+                    <p className="text-white/65 text-sm">Play on Google Doodles</p>
+                  </div>
+                  <div className="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 group-hover:bg-violet-500 text-white rounded-full font-semibold text-sm transition-colors shadow-lg shadow-violet-900/40 pointer-events-none">
+                    <Play className="w-4 h-4 fill-white" />
+                    Play on Google Doodles
+                    <ExternalLink className="w-4 h-4" />
+                  </div>
+                  <p className="text-white/40 text-xs">Opens in a new tab</p>
+                </div>
+              </a>
+            ) : (
+              <>
+            {/* ── Normal iframe game ── */}
             {/* Game iframe with click-to-play overlay */}
             <div id="game-player-container" className={`game-iframe-container relative bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm ${
               isFakeFullscreen
                 ? 'fullscreen-container'
                 : 'overflow-hidden rounded-2xl'
             }`}>
-              {/* Fullscreen / Exit fullscreen button */}
-              {gameStarted && (
+              {/* Exit fullscreen button — low opacity so it doesn't distract during play */}
+              {isFakeFullscreen && (
                 <button
-                  onClick={isFakeFullscreen ? exitFullscreen : enterFullscreen}
-                  className="absolute top-3 right-3 z-20 w-8 h-8 bg-slate-800/70 hover:bg-slate-800 text-white rounded-lg flex items-center justify-center transition-colors backdrop-blur-sm"
-                  title={t('game.fullscreen' as any)}
-                  aria-label={t('game.fullscreen' as any)}
+                  onClick={exitFullscreen}
+                  className="absolute top-3 right-3 z-20 w-8 h-8 bg-slate-900/20 hover:bg-slate-900/70 text-white/30 hover:text-white rounded-lg flex items-center justify-center transition-all backdrop-blur-sm"
+                  title={t('game.exitFullscreen' as any) || 'Exit fullscreen'}
+                  aria-label={t('game.exitFullscreen' as any) || 'Exit fullscreen'}
                 >
-                  {isFakeFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                  <Minimize2 className="w-4 h-4" />
                 </button>
               )}
 
-              {/* Play Next button (visible while playing) */}
-              {gameStarted && (
+              {/* Mute button overlay (fullscreen mode only) */}
+              {isFakeFullscreen && (
                 <button
-                  onClick={() => {
-                    if (isFakeFullscreen) exitFullscreen();
-                    setNextGame(getNextSuggestion(game));
-                    setShowPlayNext(true);
-                  }}
-                  className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/80 hover:bg-violet-600 text-white text-xs font-semibold rounded-lg transition-colors backdrop-blur-sm"
-                  title={t('game.suggestNext' as any)}
-                  aria-label={t('game.suggestNext' as any)}
+                  onClick={handleMuteToggle}
+                  className="absolute top-3 right-14 z-20 w-8 h-8 bg-slate-900/20 hover:bg-slate-900/70 text-white/30 hover:text-white rounded-lg flex items-center justify-center transition-all backdrop-blur-sm"
+                  title={isMuted ? 'Unmute' : 'Mute'}
+                  aria-label={isMuted ? 'Unmute' : 'Mute'}
                 >
-                  <SkipForward className="w-3.5 h-3.5" />
-                  {t('game.moreGames')}
+                  {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                 </button>
               )}
 
@@ -817,7 +796,7 @@ export default function PlayGame() {
                       className="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5"
                     >
                       <Shuffle className="w-4 h-4" />
-                      {t('game.moreGames')}
+                      {t('game.tryAnother' as any) || 'Try another game'}
                     </button>
                   </div>
                 </div>
@@ -833,7 +812,7 @@ export default function PlayGame() {
                 title={gt(game).title}
                 className={isFakeFullscreen
                   ? 'w-full h-full'
-                  : 'w-full aspect-[4/3] sm:aspect-[16/10] md:aspect-auto md:h-[520px]'
+                  : 'w-full aspect-[4/3] sm:aspect-[16/10] md:h-[560px]'
                 }
                 style={{
                   border: "none",
@@ -846,7 +825,41 @@ export default function PlayGame() {
                 fetchpriority="high"
                 onLoad={() => setIframeLoaded(true)}
               />
+
             </div>
+
+            {/* ── Game nav bar: Fullscreen + Mute buttons (below iframe) ── */}
+            {!game.externalUrl && (
+              <div className="mt-2 flex items-center gap-2 px-1">
+                <button
+                  onClick={isFakeFullscreen ? exitFullscreen : enterFullscreen}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                  title={isFakeFullscreen ? (t('game.exitFullscreen' as any) || 'Exit fullscreen') : (t('game.fullscreen' as any) || 'Fullscreen')}
+                  aria-label={isFakeFullscreen ? (t('game.exitFullscreen' as any) || 'Exit fullscreen') : (t('game.fullscreen' as any) || 'Fullscreen')}
+                >
+                  {isFakeFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                  <span className="hidden sm:inline">{isFakeFullscreen ? (t('game.exitFullscreen' as any) || 'Exit fullscreen') : (t('game.fullscreen' as any) || 'Fullscreen')}</span>
+                </button>
+
+                <button
+                  onClick={handleMuteToggle}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    isMuted
+                      ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                  title={isMuted ? 'Unmute' : 'Mute'}
+                  aria-label={isMuted ? 'Unmute' : 'Mute'}
+                >
+                  {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                  <span className="hidden sm:inline">{isMuted ? 'Unmute' : 'Mute'}</span>
+                </button>
+              </div>
+            )}
+
+            {/* Close externalUrl conditional */}
+            </>
+            )}
 
             {/* Action bar: Like, Dislike, Controls */}
             <div className="mt-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm px-3 sm:px-4 py-3 flex items-center gap-2 sm:gap-3 flex-wrap">
@@ -1242,7 +1255,7 @@ export default function PlayGame() {
                 </div>
                 <div>
                   <p className="text-white/80 text-xs font-medium">{t('game.autoAdvance')} {countdown}s</p>
-                  <p className="text-white font-semibold text-sm mt-0.5">{t('game.upNext')} {nextGame.category}</p>
+                  <p className="text-white font-semibold text-sm mt-0.5">{t('game.upNext')} {t(`category.${nextGame.category}` as any)}</p>
                 </div>
               </div>
             </div>

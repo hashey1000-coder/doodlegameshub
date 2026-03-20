@@ -26,6 +26,7 @@ export default function Home() {
   const [sortBy, _setSortBy] = useState<'default' | 'most-played' | 'highest-rated' | 'a-z' | 'newest'>('default');
   const [currentPage, setCurrentPage] = useState(1);
   const GAMES_PER_PAGE = 24;
+  const gamesSectionRef = useRef<HTMLDivElement>(null);
   const setActiveCategory = useCallback((v: string) => { _setActiveCategory(v); setCurrentPage(1); }, []);
   const setSearchQuery = useCallback((v: string) => { _setSearchQuery(v); setCurrentPage(1); }, []);
   const setActiveTags = useCallback((v: string[] | ((prev: string[]) => string[])) => { _setActiveTags(v); setCurrentPage(1); }, []);
@@ -645,7 +646,7 @@ export default function Home() {
         </div>
 
         {/* Games count + context — below sort */}
-        <div className="mb-4 flex items-center gap-3 flex-wrap">
+        <div ref={gamesSectionRef} className="mb-4 flex items-center gap-3 flex-wrap">
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{activeCategory === 'all' ? t('nav.allGames') : activeCategory === 'favourites' ? t('home.favourites') : activeCategory === 'top-rated' ? t('home.topRated') : t(`category.${activeCategory}` as any)}</h2>
           <p className="text-sm text-slate-500 font-medium">
             {filteredGames.length} {t('home.gamesCount' as any)}{" "}
@@ -808,7 +809,7 @@ export default function Home() {
           {totalPages > 1 && (
             <div className="mt-8 flex items-center justify-center gap-3">
               <button
-                onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); gamesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
                 disabled={currentPage === 1}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 hover:border-violet-300 hover:text-violet-600 dark:hover:border-violet-500 dark:hover:text-violet-400 transition-all"
               >
@@ -818,7 +819,7 @@ export default function Home() {
                 {currentPage} / {totalPages}
               </span>
               <button
-                onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); gamesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
                 disabled={currentPage === totalPages}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 hover:border-violet-300 hover:text-violet-600 dark:hover:border-violet-500 dark:hover:text-violet-400 transition-all"
               >

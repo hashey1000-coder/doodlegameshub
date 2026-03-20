@@ -1,7 +1,7 @@
 /**
  * useAllVotes — loads all game vote counts for the homepage (top-rated sort, badges).
  *
- * When Firebase is configured: subscribes to the entire gameVotes node in RTDB.
+ * When Firebase is configured: subscribes to the gameVotes node in RTDB.
  * Fallback: reads per-game likes from localStorage.
  */
 import { useState, useEffect } from 'react';
@@ -35,14 +35,15 @@ export function useAllVotes() {
     return () => unsubscribe();
   }, []);
 
-  /** Get like count for a slug, falling back to localStorage. */
+  /** Get like count for a slug, falling back to localStorage when Firebase is off. */
   function getLikes(slug: string): number {
     if (votesMap.has(slug)) return votesMap.get(slug)!.likes;
-    // localStorage fallback (covers when Firebase is not configured)
-    try {
-      const raw = localStorage.getItem(`game-votes-${slug}`);
-      if (raw) return JSON.parse(raw).likes || 0;
-    } catch {}
+    if (!isFirebaseConfigured) {
+      try {
+        const raw = localStorage.getItem(`game-votes-${slug}`);
+        if (raw) return JSON.parse(raw).likes || 0;
+      } catch {}
+    }
     return 0;
   }
 

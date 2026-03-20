@@ -7,7 +7,7 @@
  *
  * Falls back to localStorage when Firebase is not configured.
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ref, get, set, remove, onValue, runTransaction } from 'firebase/database';
 import { db, isFirebaseConfigured } from '@/lib/firebase';
 
@@ -60,16 +60,36 @@ export function useGameVotes(slug: string) {
   const [votes, setVotes] = useState<{ likes: number; dislikes: number }>({ likes: 0, dislikes: 0 });
   const [userVote, setUserVote] = useState<'like' | 'dislike' | null>(null);
 
+  // Refs so async callbacks always read the latest state without stale closures.
+  const votesRef = useRef(votes);
+  const userVoteStateRef = useRef(userVote);
+  useEffect(() => { votesRef.current = votes; }, [votes]);
+  useEffect(() => { userVoteStateRef.current = userVote; }, [userVote]);
+
+  // True once the initial get() for the user's server-side vote has resolved.
+  // If false when vote() is called, we must fetch inline to avoid double-counting.
+  const userVoteLoadedRef = useRef(false);
+  // Prevents onValue from reverting the optimistic count while a transaction is in flight.
+  const pendingVoteRef = useRef(false);
+
   useEffect(() => {
+    // Reset flags whenever the game changes
+    userVoteLoadedRef.current = false;
+    pendingVoteRef.current = false;
+
     if (!isFirebaseConfigured || !db) {
       setVotes(lsGetVotes(slug));
       setUserVote(lsGetUserVote(slug));
+      userVoteLoadedRef.current = true;
       return;
     }
 
     // Subscribe to real-time vote counts
     const voteRef = ref(db, `gameVotes/${slug}`);
     const unsubVotes = onValue(voteRef, (snapshot) => {
+      // Skip server updates while an optimistic vote is in flight to avoid
+      // intermediate Firebase transaction states reverting the optimistic count.
+      if (pendingVoteRef.current) return;
       if (snapshot.exists()) {
         const d = snapshot.val();
         setVotes({ likes: d.likes || 0, dislikes: d.dislikes || 0 });
@@ -80,7 +100,14 @@ export function useGameVotes(slug: string) {
 
     // One-time read for this user's current vote
     get(ref(db, `userVotes/${sessionId}/${slug}`)).then((snap) => {
-      setUserVote(snap.exists() ? (snap.val() as 'like' | 'dislike') : null);
+      const serverVote = snap.exists() ? (snap.val() as 'like' | 'dislike') : null;
+      // Only update state if the user hasn't already voted in this session
+      // (vote() sets userVoteLoadedRef = true before we reach here in that case)
+      if (!userVoteLoadedRef.current) {
+        setUserVote(serverVote);
+        userVoteStateRef.current = serverVote;
+      }
+      userVoteLoadedRef.current = true;
     });
 
     return () => unsubVotes();
@@ -114,16 +141,43 @@ export function useGameVotes(slug: string) {
       return;
     }
 
+    pendingVoteRef.current = true; // suppress onValue during the transaction
+
+    // ── Determine the authoritative previous vote ────────────────────────────
+    // If the initial server read hasn't resolved yet, fetch inline NOW.
+    // This is critical to avoid double-counting: if we assume prevUserVote=null
+    // but the server already has 'like', the transaction would add a duplicate vote.
+    let prevUserVote: 'like' | 'dislike' | null;
+    if (userVoteLoadedRef.current) {
+      // Already resolved — safe to use local state ref
+      prevUserVote = userVoteStateRef.current;
+    } else {
+      // User clicked before the background get() resolved — fetch it inline
+      try {
+        const snap = await get(ref(db, `userVotes/${sessionId}/${slug}`));
+        prevUserVote = snap.exists() ? (snap.val() as 'like' | 'dislike') : null;
+      } catch {
+        prevUserVote = null;
+      }
+      // Sync state and mark loaded so the background get() doesn't overwrite us
+      userVoteStateRef.current = prevUserVote;
+      userVoteLoadedRef.current = true;
+      setUserVote(prevUserVote);
+    }
+
+    const prevVotes = { ...votesRef.current };
+
     // Optimistic local update for instant feedback
-    const optimisticVotes = { ...votes };
-    const prevUserVote = userVote;
+    const optimisticVotes = { ...prevVotes };
     let optimisticUserVote: 'like' | 'dislike' | null;
 
     if (prevUserVote === type) {
+      // Toggle off
       if (type === 'like') optimisticVotes.likes = Math.max(0, optimisticVotes.likes - 1);
       else optimisticVotes.dislikes = Math.max(0, optimisticVotes.dislikes - 1);
       optimisticUserVote = null;
     } else {
+      // New vote or switch
       if (prevUserVote === 'like') optimisticVotes.likes = Math.max(0, optimisticVotes.likes - 1);
       if (prevUserVote === 'dislike') optimisticVotes.dislikes = Math.max(0, optimisticVotes.dislikes - 1);
       if (type === 'like') optimisticVotes.likes += 1;
@@ -133,32 +187,28 @@ export function useGameVotes(slug: string) {
 
     setVotes(optimisticVotes);
     setUserVote(optimisticUserVote);
+    userVoteStateRef.current = optimisticUserVote;
 
     try {
       const gameVoteRef = ref(db, `gameVotes/${slug}`);
-      const userVoteRef = ref(db, `userVotes/${sessionId}/${slug}`);
+      const userVoteDbRef = ref(db, `userVotes/${sessionId}/${slug}`);
 
-      // Read the user's current server-side vote first
-      const userVoteSnap = await get(userVoteRef);
-      const currentUserVote = userVoteSnap.exists()
-        ? (userVoteSnap.val() as 'like' | 'dislike')
-        : null;
-
-      // Atomic transaction on the game vote counters
+      // Atomic transaction on the game vote counters.
+      // Uses the authoritative prevUserVote fetched above — no double-counting.
       let newUserVote: 'like' | 'dislike' | null = null;
       await runTransaction(gameVoteRef, (currentData) => {
         const data = currentData ?? { likes: 0, dislikes: 0 };
         const newVotes = { likes: data.likes || 0, dislikes: data.dislikes || 0 };
 
-        if (currentUserVote === type) {
-          // Toggle off — remove the existing vote
+        if (prevUserVote === type) {
+          // Toggle off
           if (type === 'like') newVotes.likes = Math.max(0, newVotes.likes - 1);
           else newVotes.dislikes = Math.max(0, newVotes.dislikes - 1);
           newUserVote = null;
         } else {
-          // Switch from previous vote (or cast fresh)
-          if (currentUserVote === 'like') newVotes.likes = Math.max(0, newVotes.likes - 1);
-          if (currentUserVote === 'dislike') newVotes.dislikes = Math.max(0, newVotes.dislikes - 1);
+          // New vote or switch
+          if (prevUserVote === 'like') newVotes.likes = Math.max(0, newVotes.likes - 1);
+          if (prevUserVote === 'dislike') newVotes.dislikes = Math.max(0, newVotes.dislikes - 1);
           if (type === 'like') newVotes.likes += 1;
           else newVotes.dislikes += 1;
           newUserVote = type;
@@ -169,17 +219,30 @@ export function useGameVotes(slug: string) {
 
       // Write the user's personal vote record
       if (newUserVote === null) {
-        await remove(userVoteRef);
+        await remove(userVoteDbRef);
       } else {
-        await set(userVoteRef, newUserVote);
+        await set(userVoteDbRef, newUserVote);
+      }
+
+      setUserVote(newUserVote);
+      userVoteStateRef.current = newUserVote;
+
+      // Re-enable onValue updates and fetch the confirmed count from Firebase
+      pendingVoteRef.current = false;
+      const finalSnap = await get(gameVoteRef);
+      if (finalSnap.exists()) {
+        const d = finalSnap.val();
+        setVotes({ likes: d.likes || 0, dislikes: d.dislikes || 0 });
       }
     } catch (err) {
       // Revert optimistic update on failure
+      pendingVoteRef.current = false;
       console.warn('Vote failed, reverting:', err);
-      setVotes(votes);
-      setUserVote(userVote);
+      setVotes(prevVotes);
+      setUserVote(prevUserVote);
+      userVoteStateRef.current = prevUserVote;
     }
-  }, [slug, sessionId, votes, userVote]);
+  }, [slug, sessionId]); // No votes/userVote deps — reads via refs, no stale closures
 
   return { votes, userVote, vote };
 }
